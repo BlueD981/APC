@@ -22,21 +22,24 @@ public class APC extends Application {
 
     @Override
     public void start(Stage APCMain) {
-        APCMain.setTitle("Arcaea Potential Calculator (ver. 2.0)");
+        APCMain.setTitle("Arcaea Potential Calculator (ver. 2.0.1)");
 
         GridPane grid = new GridPane();
         grid.setHgap(10);
         grid.setVgap(10);
 
         grid.add(new Label("보면상수 :"), 5, 5);
+        bpField.setPromptText("여기에 보면상수 입력");
         grid.add(bpField, 5, 6);
         bpField.textProperty().addListener((obs, old, val) -> numInput());
 
         grid.add(new Label("점수 :"), 5, 8);
+        scoreField.setPromptText("여기에 점수 입력");
         grid.add(scoreField, 5, 9);
         scoreField.textProperty().addListener((obs, old, val) -> numInput());
 
         grid.add(new Label("노트 수 :"), 5, 11);
+        noteCountField.setPromptText("여기에 노트 수 입력");
         grid.add(noteCountField, 5, 12);
         noteCountField.textProperty().addListener((obs, old, val) -> numInput());
 
