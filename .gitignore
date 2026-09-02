@@ -1,0 +1,6 @@
+/target/
+/*.app/
+*.zip
+.vscode/
+*.class
+.DS_Store

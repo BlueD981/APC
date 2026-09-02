@@ -15,21 +15,30 @@ import javafx.geometry.VPos;
 
 import javafx.scene.control.Button;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
-
+import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 import javafx.scene.Scene;
 
 import javafx.stage.Stage;
 
 public class APC extends Application {
+    Font NanumGothicExtraBold = Font.loadFont(getClass().getResourceAsStream("/NanumFontSetup_TTF_GOTHIC/NanumFontSetup_TTF_GOTHIC/NanumGothicExtraBold.ttf"), 15);
+    Font NanumGothicBold = Font.loadFont(getClass().getResourceAsStream("/NanumFontSetup_TTF_GOTHIC/NanumFontSetup_TTF_GOTHIC/NanumGothicBold.ttf"), 15);
+    Font NanumGothic = Font.loadFont(getClass().getResourceAsStream("/NanumFontSetup_TTF_GOTHIC/NanumFontSetup_TTF_GOTHIC/NanumGothic.ttf"), 15);
+    Font NanumGothicLight = Font.loadFont(getClass().getResourceAsStream("/NanumFontSetup_TTF_GOTHIC/NanumFontSetup_TTF_GOTHIC/NanumGothicLight.ttf"), 15);
 
     public double bpStr;
 
@@ -42,7 +51,7 @@ public class APC extends Application {
     private javafx.collections.ObservableList<javafx.scene.Node> RL;
     
     private Label scoreError = new Label("");
-    private Label resultLabel = new Label("--");
+    private Label resultLabel = new Label(String.format("결과 포텐셜 :%n--"));
 
     private ChangeListener<String> bpListener = (obs, old, val) -> numInput();
     private ChangeListener<String> noteCountListener = (obs, old, val) -> numInput();
@@ -51,24 +60,40 @@ public class APC extends Application {
     private StackPane rootLayout;
     private StackPane contentArea;
 
-    private String info = "Arcaea Potential Calculator (ver. 3.0)";
+    private String info = "Arcaea Potential Calculator (ver. 4.0)";
     
     private TextField scoreField = new TextField();
 
+    private Label WLabel(String text) {
+        Label label = new Label(text);
+        label.setWrapText(true);
+        label.setMaxWidth(Double.MAX_VALUE);
+        return label;
+    }
+
     @Override
     public void start(Stage APCMain) {
+        bpError.getStyleClass().add("ErrorText");
+        scoreError.getStyleClass().add("ErrorText");
+        noteCountError.getStyleClass().add("ErrorText");
+
         APCMain.setTitle(info);
 
         rootLayout = new StackPane();
         contentArea = new StackPane();
 
+        rootLayout.getStyleClass().add("rootlayout");
+        contentArea.getStyleClass().add("contentarea");
+
         RL = rootLayout.getChildren();
         CA = contentArea.getChildren();
 
         BackButton = new Button("◀");
-        BackButton.setStyle("-fx-font-size: 11px;");
+        BackButton.setStyle("-fx-font-size: 10px;");
         BackButton.setPrefSize(25, 25);
         BackButton.setFocusTraversable(false);
+
+        BackButton.getStyleClass().add("BackButton");
 
         StackPane.setAlignment(BackButton, Pos.TOP_LEFT);
         StackPane.setMargin(BackButton, new Insets(15, 0, 0, 15));
@@ -80,7 +105,25 @@ public class APC extends Application {
         CA.add(mainMenu());
         RL.addAll(contentArea, BackButton);
 
-        APCMain.setScene(new Scene(rootLayout, 640, 360));
+        Scene primaryScene = new Scene(rootLayout, 640, 360);
+        try {
+            String cssPath = getClass().getResource("/css/APC.css").toExternalForm();
+            primaryScene.getStylesheets().add(cssPath);
+            System.out.println("성공");
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            try {
+                primaryScene.getStylesheets().add(new java.io.File("src/main/resources/css/APC.css").toURI().toURL().toExternalForm());
+                System.out.println("성공");
+            }
+            catch (Exception f) {
+                f.printStackTrace();
+                System.out.println("실패");
+            }
+        }
+
+        APCMain.setScene(primaryScene);
         APCMain.setResizable(false);
         APCMain.show();
     }
@@ -91,7 +134,9 @@ public class APC extends Application {
         scoreField.textProperty().removeListener(AutoScoreListener);
         noteCountField.textProperty().removeListener(noteCountListener);
         searchField.textProperty().removeListener(searchListener);
+        searchResultTable.getSelectionModel().selectedItemProperty().removeListener(resultListener);
         searchResultTable.setItems(null);
+        clearCheck.selectedProperty().removeListener(clearCheckListener);
         CA.clear();
         CA.add(mainMenu());
     }
@@ -101,27 +146,49 @@ public class APC extends Application {
         BackButton.setDisable(true);
 
         GridPane menu = new GridPane();
+        menu.getStyleClass().add("menu");
         menu.setHgap(10);
         menu.setVgap(10);
 
         Label versionLabel = new Label(info);
-        versionLabel.setFocusTraversable((true));
+        versionLabel.setFocusTraversable(true);
         versionLabel.setAlignment(Pos.CENTER_RIGHT);
 
         GridPane.setHalignment(versionLabel, HPos.RIGHT);
         GridPane.setValignment(versionLabel, VPos.BOTTOM);
 
-        menu.add(versionLabel, 27, 27);
+        menu.add(versionLabel, 26, 21);
+        menu.add(new Label(""), 5, 24);
 
         Button ManualBtn = new Button("직접 입력");
         Button AutoBtn = new Button("곡 검색 및 자동 입력");
+        Button InfoBtn = new Button("앱 정보");
+        ManualBtn.getStyleClass().add("Buttons");
+        AutoBtn.getStyleClass().add("Buttons");
+        InfoBtn.getStyleClass().add("Buttons");
 
         ManualBtn.setPrefWidth(160);
         AutoBtn.setPrefWidth(160);
 
-        menu.add(new Label("APC"), 5, 5);
-        menu.add(ManualBtn, 5, 7);
-        menu.add(AutoBtn, 5, 8);
+        Text APC_A = new Text("A");
+        Text APC_rcaea = new Text(String.format("rcaea"));
+        Text APC_P = new Text("P");
+        Text APC_otential = new Text(String.format("otential"));
+        Text APC_C = new Text("C");
+        Text APC_alculator = new Text("alculator");
+        Text ENTER1 = new Text(String.format("%n"));
+        Text ENTER2 = new Text(String.format("%n"));
+        APC_A.getStyleClass().add("APCTitle1");
+        APC_P.getStyleClass().add("APCTitle1");
+        APC_C.getStyleClass().add("APCTitle1");
+        APC_rcaea.getStyleClass().add("APCTitle2");
+        APC_otential.getStyleClass().add("APCTitle2");
+        APC_alculator.getStyleClass().add("APCTitle2");
+        TextFlow TitleLabel = new TextFlow(APC_A, APC_rcaea, ENTER1, APC_P, APC_otential, ENTER2, APC_C, APC_alculator);
+        menu.add(TitleLabel, 5, 8);
+        menu.add(ManualBtn, 5, 10);
+        menu.add(AutoBtn, 5, 12);
+        menu.add(InfoBtn, 5, 14);
 
         ManualBtn.setOnAction(Mnclick -> {
             CA.clear();
@@ -131,6 +198,12 @@ public class APC extends Application {
             CA.clear();
             CA.add(AutoInput());
         });
+        InfoBtn.setOnAction(Crclick -> {
+            CA.clear();
+            CA.add(AppInfo());
+        });
+
+        menu.setFocusTraversable(false);
 
         return menu;
     }
@@ -138,7 +211,21 @@ public class APC extends Application {
     private Label bpError = new Label("");
     private Label noteCountError = new Label("");
 
+    private ChangeListener<Boolean> clearCheckListener = (obs, old, val) -> {
+            if (val) {
+                isCleared = true;
+            }
+            else {
+                isCleared = false;
+            }
+            autoNumInput();
+        };
+
     private ChangeListener<String> ManualScoreListener = (obs, old, val) -> numInput();
+
+    private CheckBox clearCheck = new CheckBox("클리어");
+
+    public boolean isCleared = false;
 
     private TextField bpField = new TextField();
     private TextField noteCountField = new TextField();
@@ -148,6 +235,7 @@ public class APC extends Application {
         BackButton.setDisable(false);
 
         GridPane mnip = new GridPane();
+        mnip.getStyleClass().add("mnip");
         mnip.setHgap(10);
         mnip.setVgap(10);
 
@@ -179,6 +267,11 @@ public class APC extends Application {
         mnip.add(noteCountError, 5, 13);
         mnip.add(resultLabel, 8, 9);
 
+        mnip.add(clearCheck, 8, 6);
+        clearCheck.selectedProperty().addListener(clearCheckListener);
+
+        mnip.setFocusTraversable(false);
+
         return mnip;
     }
 
@@ -202,7 +295,7 @@ public class APC extends Application {
                 song = newSel.getSongInfo();
                 diffInt = 3;
             }
-            if (newSel.getDifficulty().equals("BYD")) {
+            if (newSel.getDifficulty().equals("BYD") || newSel.getDifficulty().equals("INS")) {
                 song = newSel.getSongInfo();
                 diffInt = 4;
             }
@@ -216,6 +309,8 @@ public class APC extends Application {
 
     private Integer diffInt;
 
+    private Label autoResultLabel = new Label(String.format("결과 포텐셜 :%n--%n%n보면상수 :%n--%n%n총 노트 수 :%n--"));
+
     private TableColumn<SongInformation, String> titleCol = new TableColumn<>("제목");
     private TableColumn<SongInformation, String> diffCol = new TableColumn<>("난이도");
     private TableColumn<SongInformation, String> levelCol = new TableColumn<>("레벨");
@@ -228,7 +323,15 @@ public class APC extends Application {
         BackButton.setOpacity(BBActiveOpacity);
         BackButton.setDisable(false);
 
+        Rectangle clip = new Rectangle();
+        clip.widthProperty().bind(searchResultTable.widthProperty());
+        clip.heightProperty().bind(searchResultTable.heightProperty());
+        clip.setArcWidth(40);  // 둥글기 정도 (원하는 대로 조절)
+        clip.setArcHeight(40);
+        searchResultTable.setClip(clip);
+
         GridPane atip = new GridPane();
+        atip.getStyleClass().add("atip");
         atip.setHgap(10);
         atip.setVgap(10);
 
@@ -251,11 +354,6 @@ public class APC extends Application {
             DiffList.add(String.valueOf(i));
         }
         DiffSelect.setText("전체");
-        /*String DiffListTest = "";
-        for (int i = 0; i <= DiffList.size()-1; i++) {
-            System.out.println(DiffListTest + String.valueOf(DiffList.get(i)));
-        }
-        System.out.println("");*/
 
         for (int i = 0; i <= 4; i++) {
             DiffList.add(String.valueOf(i));
@@ -323,14 +421,7 @@ public class APC extends Application {
                     }
                 }
 
-                /*
-                String DiffListTest2 = "";
-                for (int i = 0; i <= DiffList.size()-1; i++) {
-                    System.out.println(DiffListTest2 + String.valueOf(DiffList.get(i)));
-                }
-                */
                 searchResultTable.setItems(FilteredSongs(DiffList));
-                //System.out.println("");
             });
         }
 
@@ -344,12 +435,8 @@ public class APC extends Application {
                     DiffList.add(String.valueOf(i));
                 }
                 DiffSelect.setText("전체");
-                /*String DiffListTest1 = "";
-                for (int i = 0; i <= DiffList.size()-1; i++) {
-                    System.out.println(DiffListTest1 + String.valueOf(DiffList.get(i)));
-                }*/
+
                 searchResultTable.setItems(FilteredSongs(DiffList));
-                //System.out.println("");
             }
             else {
                 SelAll.setSelected(true);
@@ -370,20 +457,26 @@ public class APC extends Application {
         titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
         diffCol.setCellValueFactory(new PropertyValueFactory<>("difficulty"));
         levelCol.setCellValueFactory(new PropertyValueFactory<>("lvl"));
-        titleCol.setMinWidth(146);
-        titleCol.setMaxWidth(146);
-        diffCol.setMinWidth(51);
-        diffCol.setMaxWidth(51);
-        levelCol.setMinWidth(35);
-        levelCol.setMaxWidth(35);
+        titleCol.setMinWidth(149);
+        titleCol.setMaxWidth(149);
+        diffCol.setMinWidth(50);
+        diffCol.setMaxWidth(50);
+        levelCol.setMinWidth(30);
+        levelCol.setMaxWidth(30);
         
         searchResultTable.getColumns().clear();
-        searchResultTable.getColumns().addAll(titleCol, diffCol, levelCol);
+        searchResultTable.getColumns().add(titleCol);
+        searchResultTable.getColumns().add(diffCol);
+        searchResultTable.getColumns().add(levelCol);
         searchResultTable.setItems(FilteredSongs(DiffList));
         searchResultTable.setMinHeight(50);
         searchResultTable.setMinHeight(50);
         searchResultTable.setMaxWidth(250);
         searchResultTable.setMaxWidth(250);
+        /*GridPane TablePane = new GridPane();
+        TablePane.add(searchResultTable, 0, 0);
+        TablePane.getStyleClass().add("TablePane");
+        atip.add(TablePane, 5, 8);*/
         atip.add(searchResultTable, 5, 8);
         atip.add(new Label(""), 5, 9);
 
@@ -398,13 +491,81 @@ public class APC extends Application {
         scoreField.textProperty().addListener(AutoScoreListener);
         atip.add(scoreError, 7, 7);
 
-        scoreField.setMinWidth(250);
-        scoreField.setMaxWidth(250);
+        scoreField.setMinWidth(200);
+        scoreField.setMaxWidth(200);
         atip.add(scoreField, 7, 6);
 
-        atip.add(resultLabel, 7, 8);
+        atip.add(autoResultLabel, 7, 8);
+
+        atip.add(clearCheck, 8, 6);
+        clearCheck.selectedProperty().addListener(clearCheckListener);
+
+        atip.setFocusTraversable(false);
 
         return atip;
+    }
+
+    public ScrollPane AppInfo() {
+        BackButton.setOpacity(BBActiveOpacity);
+        BackButton.setDisable(false);
+
+        GridPane AppInfoGrid = new GridPane();
+        AppInfoGrid.getStyleClass().add("AppInfoGrid");
+        AppInfoGrid.setFocusTraversable(false);
+
+        AppInfoGrid.setHgap(10);
+        AppInfoGrid.setVgap(10);
+
+        Text INFO_APC_A = new Text("A");
+        Text INFO_APC_rcaea = new Text(String.format("rcaea"));
+        Text INFO_APC_P = new Text(" P");
+        Text INFO_APC_otential = new Text(String.format("otential"));
+        Text INFO_APC_C = new Text(" C");
+        Text INFO_APC_alculator = new Text("alculator");
+        Text INFO_VersionInfo = new Text(String.format("%n       version 4.0"));
+        INFO_APC_A.getStyleClass().add("INFO_APCTitle1");
+        INFO_APC_P.getStyleClass().add("INFO_APCTitle1");
+        INFO_APC_C.getStyleClass().add("INFO_APCTitle1");
+        INFO_APC_rcaea.getStyleClass().add("INFO_APCTitle2");
+        INFO_APC_otential.getStyleClass().add("INFO_APCTitle2");
+        INFO_APC_alculator.getStyleClass().add("INFO_APCTitle2");
+        INFO_VersionInfo.getStyleClass().add("INFO_VersionInfo");
+
+        TextFlow InfoTitle = new TextFlow(INFO_APC_A, INFO_APC_rcaea, INFO_APC_P, INFO_APC_otential, INFO_APC_C, INFO_APC_alculator, INFO_VersionInfo);
+        AppInfoGrid.add(InfoTitle, 5, 5);
+
+        Label MakerLabel = new Label("개발");
+        MakerLabel.getStyleClass().add("AppInfoCategory");
+        AppInfoGrid.add(MakerLabel, 5, 9);
+        AppInfoGrid.add(WLabel(String.format(
+            "       BlueD981"
+            )
+        ), 5, 10);
+
+        Label ArcaeaVersionLabel = new Label("대응 Arcaea 버전");
+        ArcaeaVersionLabel.getStyleClass().add("AppInfoCategory");
+        AppInfoGrid.add(ArcaeaVersionLabel, 5, 13);
+        AppInfoGrid.add(WLabel(String.format(
+            "       v7.0.255"
+            )
+        ), 5, 14);
+
+        Label FontLabel = new Label("폰트");
+        FontLabel.getStyleClass().add("AppInfoCategory");
+        AppInfoGrid.add(FontLabel, 5, 17);
+        AppInfoGrid.add(WLabel(String.format(
+            "       [네이버 주식회사 | 프로그램 전체] 나눔고딕"
+            )
+        ), 5, 18);
+
+        AppInfoGrid.add(WLabel(""), 5, 22);
+
+        ScrollPane AppInfoScroll = new ScrollPane(AppInfoGrid);
+        AppInfoScroll.getStyleClass().add("AppInfoScroll");
+        AppInfoScroll.setFitToWidth(true);
+        AppInfoScroll.setFocusTraversable(false);
+
+        return AppInfoScroll;
     }
 
     private void numInput() {
@@ -416,7 +577,7 @@ public class APC extends Application {
         double noteCount = 0;
 
         bpError.setText("");
-        resultLabel.setText("--");
+        resultLabel.setText(String.format("결과 포텐셜 :%n--"));
         scoreError.setText("");
 
         if (bpField.getText().isEmpty()) {
@@ -484,32 +645,46 @@ public class APC extends Application {
         }
 
         if (bpValid && scoreValid) {
-            resultLabel.setText(APCLogic.APCLogicMain(bp, score, noteCount));
+            resultLabel.setText(String.format("결과 포텐셜 :%n") + APCLogic.APCLogicMain(bp, score, noteCount, isCleared));
         }
     }
 
     public void autoNumInput() {
-        if (diffInt == null || song == null) {
-            return;
-        }
         double score = 0;
         boolean scoreValid = true;
         if (scoreField.getText().isEmpty()) {
             scoreValid = false;
             scoreError.setText("");
+            if (diffInt == null || song == null) {
+                autoResultLabel.setText(String.format("결과 포텐셜 :%n--%n%n보면상수 :%n--%n%n총 노트 수 :%n--"));
+            }
+            else {
+                autoResultLabel.setText(String.format("결과 포텐셜 :%n--%n%n보면상수 :%n%.1f%n%n총 노트 수 :%n%d", song.getConst(diffInt), song.getNotes(diffInt)));
+            }
         }
         else {
             try {
                 scoreValid = false;
                 score = Double.parseDouble(scoreField.getText());
-                if (score < 0 || score > 10002236) {
+                if (diffInt == null || song == null) {
+                    scoreValid = false;
+                    scoreError.setText("");
+                    if (score < 0 || score > 10002236) {
+                        scoreError.setText("유효하지 않은 점수입니다.");
+                        autoResultLabel.setText(String.format("결과 포텐셜 :%n--%n%n보면상수 :%n--%n%n총 노트 수 :%n--"));
+                    }
+                    else {
+                        scoreError.setText("");
+                    }
+                }
+                else if (score < 0 || score > 10002236) {
                     scoreValid = false;
                     scoreError.setText("유효하지 않은 점수입니다.");
-                    resultLabel.setText("--");
+                    autoResultLabel.setText(String.format("결과 포텐셜 :%n--%n%n보면상수 :%n--%n%n총 노트 수 :%n--"));
                 }
                 else if (score > song.getNotes(diffInt) + 10000000) {
                     scoreValid = true;
-                    scoreError.setText(String.format("유효하지 않은 점수입니다. 최대 점수: %d", song.getNotes(diffInt) + 10000000));
+                    scoreError.setText(String.format("범위 초과 | 최대 점수: %d", song.getNotes(diffInt) + 10000000));
                 }
                 else {
                     scoreValid = true;
@@ -521,7 +696,9 @@ public class APC extends Application {
                 scoreError.setText("유효하지 않은 점수입니다.");
             }
         }
-        if (scoreValid) resultLabel.setText(String.valueOf(APCLogic.APCLogicMain(song.getConst(diffInt), score, (double) song.getNotes(diffInt))) + String.format("\n보면상수: %.1f\n총 노트 수: %d", song.getConst(diffInt), song.getNotes(diffInt))); //System.out.println("0 out");
+        if (scoreValid) {
+            autoResultLabel.setText(String.valueOf(String.format("결과 포텐셜 :%n") + APCLogic.APCLogicMain(song.getConst(diffInt), score, (double) song.getNotes(diffInt), isCleared)) + String.format("%n%n보면상수 :%n%.1f%n%n총 노트 수 :%n%d", song.getConst(diffInt), song.getNotes(diffInt)));/*System.out.println("0 out");*/
+        }
     }
 
     public class SongInformation {
@@ -555,19 +732,33 @@ public class APC extends Application {
         ObservableList<SongInformation> ss = FXCollections.observableArrayList();
         ss.clear();
         String search = searchField.getText().toLowerCase().replaceAll("\\s+", "");
+        Double searchParsed = -1.0;
+
+        try {
+            searchParsed = Double.parseDouble(search);
+        }
+        catch (Exception e) {
+            searchParsed = -1.0;
+        }
 
         for (Songs song : Songs.values()) {
-            if (!song.getTitle().toLowerCase().replaceAll("\\s+", "").contains(search) && !song.getBYDTitle().toLowerCase().replaceAll("\\s+", "").contains(search)) {
-                continue;
-            }
+
+            Boolean TitleMatch = song.getTitle().toLowerCase().replaceAll("\\s+", "").contains(search) || song.getBYDTitle().toLowerCase().replaceAll("\\s+", "").contains(search);
 
             for (int i = 0; i <= 4; i++) {
                 if (DiffList.contains(String.valueOf(i)) && song.getConst(i) > 0) {
-                    if (i < 4) {
-                        ss.add(new SongInformation(song, song.getTitle(), song.getDiff(i), song.getLevel(i)));
-                    }
-                    else if (i == 4) {
-                        ss.add(new SongInformation(song, song.getBYDTitle(), song.getDiff(i), song.getLevel(i)));
+                    boolean LevelMatch = song.getLevel(i).equalsIgnoreCase(search);
+                    boolean ConstMatch = (searchParsed > 0) && (song.getConst(i) == searchParsed);
+
+                    if (TitleMatch || LevelMatch || ConstMatch) {
+                        if (i < 4) {
+                            ss.add(new SongInformation(song, song.getTitle(), song.getDiff(i), song.getLevel(i)));
+                            continue;
+                        }
+                        else if (i == 4) {
+                            ss.add(new SongInformation(song, song.getBYDTitle(), song.getDiff(i), song.getLevel(i)));
+                            continue;
+                        }
                     }
                 }
             }
@@ -592,7 +783,7 @@ public class APC extends Application {
             if (DiffList.contains(String.valueOf("3")) && song.getDifficulty().equals("ETR")) {
                 fs.add(song);
             }
-            if (DiffList.contains(String.valueOf("4")) && song.getDifficulty().equals("BYD")) {
+            if (DiffList.contains(String.valueOf("4")) && (song.getDifficulty().equals("BYD") || song.getDifficulty().equals("INS"))) {
                 fs.add(song);
             }
         }
