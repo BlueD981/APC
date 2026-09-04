@@ -4,14 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javafx.application.Application;
+
 import javafx.beans.value.ChangeListener;
+
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
-import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.geometry.VPos;
 
 import javafx.scene.control.Button;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -19,17 +19,24 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleGroup;
 
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
+
 import javafx.scene.shape.Rectangle;
+
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+
 import javafx.scene.text.TextFlow;
+
 import javafx.scene.Scene;
 
 import javafx.stage.Stage;
@@ -60,7 +67,7 @@ public class APC extends Application {
     private StackPane rootLayout;
     private StackPane contentArea;
 
-    private String info = "Arcaea Potential Calculator (ver. 4.0)";
+    private String info = "Arcaea Potential Calculator (ver. 4.1)";
     
     private TextField scoreField = new TextField();
 
@@ -73,6 +80,9 @@ public class APC extends Application {
 
     @Override
     public void start(Stage APCMain) {
+        settings.loadSettings();
+        /*System.out.println(settings.get("Theme", "ThemeDefault"));*/
+
         bpError.getStyleClass().add("ErrorText");
         scoreError.getStyleClass().add("ErrorText");
         noteCountError.getStyleClass().add("ErrorText");
@@ -80,6 +90,7 @@ public class APC extends Application {
         APCMain.setTitle(info);
 
         rootLayout = new StackPane();
+        rootLayout.getStyleClass().add("rootLayout");
         contentArea = new StackPane();
 
         rootLayout.getStyleClass().add("rootlayout");
@@ -107,20 +118,70 @@ public class APC extends Application {
 
         Scene primaryScene = new Scene(rootLayout, 640, 360);
         try {
-            String cssPath = getClass().getResource("/css/APC.css").toExternalForm();
-            primaryScene.getStylesheets().add(cssPath);
-            System.out.println("성공");
+            if (settings.get("Theme", "Light").equals("Light")) {
+                String cssPath = getClass().getResource("/css/APCLight.css").toExternalForm();
+                primaryScene.getStylesheets().add(cssPath);
+                /*System.out.println("성공");*/
+            }
+            else if (settings.get("Theme", "Light").equals("Dark")) {
+                String cssPath = getClass().getResource("/css/APCDark.css").toExternalForm();
+                primaryScene.getStylesheets().add(cssPath);
+                /*System.out.println("성공");*/
+            }
+            else if (settings.get("Theme", "Light").equals("Custom")) {
+                String cssPath = getClass().getResource("/css/APCCustom.css").toExternalForm();
+                primaryScene.getStylesheets().add(cssPath);
+                /*System.out.println("성공");*/
+            }
         }
         catch (Exception e) {
             e.printStackTrace();
             try {
-                primaryScene.getStylesheets().add(new java.io.File("src/main/resources/css/APC.css").toURI().toURL().toExternalForm());
-                System.out.println("성공");
+                if (settings.get("Theme", "Light").equals("Light")) {
+                    primaryScene.getStylesheets().add(new java.io.File("src/main/resources/css/APCLight.css").toURI().toURL().toExternalForm());
+                    /*System.out.println("성공");*/
+                }
+                else if (settings.get("Theme", "Light").equals("Dark")) {
+                    primaryScene.getStylesheets().add(new java.io.File("src/main/resources/css/APCDark.css").toURI().toURL().toExternalForm());
+                    /*System.out.println("성공");*/
+                }
+                else if (settings.get("Theme", "Light").equals("Custom")) {
+                    primaryScene.getStylesheets().add(new java.io.File("src/main/resources/css/APCCustom.css").toURI().toURL().toExternalForm());
+                    /*System.out.println("성공");*/
+                }
             }
             catch (Exception f) {
                 f.printStackTrace();
-                System.out.println("실패");
+                /*System.out.println("실패");*/
             }
+        }
+        try {
+            if (settings.get("clearCheckBoxDefault", "Checked").equals("Follow Latest Decision")) {
+                if (settings.get("clearLatest", "Track Complete").equals("Track Complete")) {
+                    isCleared = true;
+                    clearCheck.setSelected(true);
+                    /*System.out.println("TC성공");*/
+                }
+                if (settings.get("clearLatest", "Track Complete").equals("Track Lost")) {
+                    isCleared = false;
+                    clearCheck.setSelected(false);
+                    /*System.out.println("TL성공");*/
+                }
+            }
+            else if (settings.get("clearCheckBoxDefault", "Checked").equals("Checked")) {
+                isCleared = true;
+                clearCheck.setSelected(true);
+                /*System.out.println("C성공");*/
+            }
+            else if (settings.get("clearCheckBoxDefault", "Checked").equals("Not Checked")) {
+                isCleared = false;
+                clearCheck.setSelected(false);
+                /*System.out.println("NC성공");*/
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            /*System.out.println("실패");*/
         }
 
         APCMain.setScene(primaryScene);
@@ -146,29 +207,30 @@ public class APC extends Application {
         BackButton.setDisable(true);
 
         GridPane menu = new GridPane();
-        menu.getStyleClass().add("menu");
-        menu.setHgap(10);
-        menu.setVgap(10);
+        menu.getStyleClass().add("Panes");
+
+        GridPane menu1 = new GridPane();
+        menu1.getStyleClass().add("Panes");
+        menu1.setHgap(10);
+        menu1.setVgap(10);
 
         Label versionLabel = new Label(info);
         versionLabel.setFocusTraversable(true);
-        versionLabel.setAlignment(Pos.CENTER_RIGHT);
-
-        GridPane.setHalignment(versionLabel, HPos.RIGHT);
-        GridPane.setValignment(versionLabel, VPos.BOTTOM);
-
-        menu.add(versionLabel, 26, 21);
-        menu.add(new Label(""), 5, 24);
+        /*versionLabel.setAlignment(Pos.CENTER_RIGHT);*/
 
         Button ManualBtn = new Button("직접 입력");
         Button AutoBtn = new Button("곡 검색 및 자동 입력");
+        Button SettingsBtn = new Button("설정");
         Button InfoBtn = new Button("앱 정보");
         ManualBtn.getStyleClass().add("Buttons");
         AutoBtn.getStyleClass().add("Buttons");
+        SettingsBtn.getStyleClass().add("Buttons");
         InfoBtn.getStyleClass().add("Buttons");
 
         ManualBtn.setPrefWidth(160);
         AutoBtn.setPrefWidth(160);
+        SettingsBtn.setPrefWidth(75);
+        InfoBtn.setPrefWidth(75);
 
         Text APC_A = new Text("A");
         Text APC_rcaea = new Text(String.format("rcaea"));
@@ -185,10 +247,15 @@ public class APC extends Application {
         APC_otential.getStyleClass().add("APCTitle2");
         APC_alculator.getStyleClass().add("APCTitle2");
         TextFlow TitleLabel = new TextFlow(APC_A, APC_rcaea, ENTER1, APC_P, APC_otential, ENTER2, APC_C, APC_alculator);
-        menu.add(TitleLabel, 5, 8);
-        menu.add(ManualBtn, 5, 10);
-        menu.add(AutoBtn, 5, 12);
-        menu.add(InfoBtn, 5, 14);
+        menu1.add(TitleLabel, 5, 5);
+        menu1.add(ManualBtn, 5, 7);
+        menu1.add(AutoBtn, 5, 9);
+        GridPane twoButtons = new GridPane();
+        twoButtons.getStyleClass().add("Panes");
+        twoButtons.setHgap(10);
+        twoButtons.add(SettingsBtn, 0, 0);
+        twoButtons.add(InfoBtn, 1, 0);
+        menu1.add(twoButtons, 5, 11);
 
         ManualBtn.setOnAction(Mnclick -> {
             CA.clear();
@@ -198,12 +265,29 @@ public class APC extends Application {
             CA.clear();
             CA.add(AutoInput());
         });
+        SettingsBtn.setOnAction(Stclick -> {
+            CA.clear();
+            CA.add(Settings());
+        });
         InfoBtn.setOnAction(Crclick -> {
             CA.clear();
             CA.add(AppInfo());
         });
 
-        menu.setFocusTraversable(false);
+        menu1.setFocusTraversable(false);
+
+        int MIHgap = 427;
+
+        GridPane menu_info = new GridPane();
+        menu_info.getStyleClass().add("Panes");
+        Label blankLabel = new Label("");
+        menu_info.setHgap(MIHgap);
+        menu_info.setVgap(37);
+        menu_info.add(blankLabel, 0, 0);
+        menu_info.add(versionLabel, 1, 1);
+
+        menu.add(menu1, 0, 0);
+        menu.add(menu_info, 0, 1);
 
         return menu;
     }
@@ -214,9 +298,13 @@ public class APC extends Application {
     private ChangeListener<Boolean> clearCheckListener = (obs, old, val) -> {
             if (val) {
                 isCleared = true;
+                settings.set("clearLatest", "Track Complete");
+                /*System.out.println(settings.get("clearLatest", "Track Complete"));*/
             }
             else {
                 isCleared = false;
+                settings.set("clearLatest", "Track Lost");
+                /*System.out.println(settings.get("clearLatest", "Track Lost"));*/
             }
             autoNumInput();
         };
@@ -234,8 +322,32 @@ public class APC extends Application {
         BackButton.setOpacity(BBActiveOpacity);
         BackButton.setDisable(false);
 
+        if (settings.get("clearCheckBoxDefault", "Checked").equals("Checked")) {
+            settings.set("clearCheckBoxDefault", "Checked");
+            isCleared = true;
+            clearCheck.setSelected(true);
+        }
+        else if (settings.get("clearCheckBoxDefault", "Checked").equals("Not Checked")) {
+            settings.set("clearCheckBoxDefault", "Not Checked");
+            isCleared = false;
+            clearCheck.setSelected(false);
+        }
+        else if (settings.get("clearCheckBoxDefault", "Checked").equals("Follow Latest Decision")) {
+            settings.set("clearCheckBoxDefault", "Follow Latest Decision");
+            if (settings.get("clearLatest", "Track Complete").equals("Track Complete")) {
+                isCleared = true;
+                clearCheck.setSelected(true);
+            }
+            else if (settings.get("clearLatest", "Track Complete").equals("Track Lost")) {
+                isCleared = false;
+                clearCheck.setSelected(false);
+            }
+        }
+
+        numInput();
+
         GridPane mnip = new GridPane();
-        mnip.getStyleClass().add("mnip");
+        mnip.getStyleClass().add("Panes");
         mnip.setHgap(10);
         mnip.setVgap(10);
 
@@ -323,15 +435,39 @@ public class APC extends Application {
         BackButton.setOpacity(BBActiveOpacity);
         BackButton.setDisable(false);
 
+        if (settings.get("clearCheckBoxDefault", "Checked").equals("Checked")) {
+            settings.set("clearCheckBoxDefault", "Checked");
+            isCleared = true;
+            clearCheck.setSelected(true);
+        }
+        else if (settings.get("clearCheckBoxDefault", "Checked").equals("Not Checked")) {
+            settings.set("clearCheckBoxDefault", "Not Checked");
+            isCleared = false;
+            clearCheck.setSelected(false);
+        }
+        else if (settings.get("clearCheckBoxDefault", "Checked").equals("Follow Latest Decision")) {
+            settings.set("clearCheckBoxDefault", "Follow Latest Decision");
+            if (settings.get("clearLatest", "Track Complete").equals("Track Complete")) {
+                isCleared = true;
+                clearCheck.setSelected(true);
+            }
+            else if (settings.get("clearLatest", "Track Complete").equals("Track Lost")) {
+                isCleared = false;
+                clearCheck.setSelected(false);
+            }
+        }
+
+        autoNumInput();
+
         Rectangle clip = new Rectangle();
         clip.widthProperty().bind(searchResultTable.widthProperty());
         clip.heightProperty().bind(searchResultTable.heightProperty());
-        clip.setArcWidth(40);  // 둥글기 정도 (원하는 대로 조절)
+        clip.setArcWidth(40);
         clip.setArcHeight(40);
         searchResultTable.setClip(clip);
 
         GridPane atip = new GridPane();
-        atip.getStyleClass().add("atip");
+        atip.getStyleClass().add("Panes");
         atip.setHgap(10);
         atip.setVgap(10);
 
@@ -510,7 +646,7 @@ public class APC extends Application {
         BackButton.setDisable(false);
 
         GridPane AppInfoGrid = new GridPane();
-        AppInfoGrid.getStyleClass().add("AppInfoGrid");
+        AppInfoGrid.getStyleClass().add("Panes");
         AppInfoGrid.setFocusTraversable(false);
 
         AppInfoGrid.setHgap(10);
@@ -522,7 +658,7 @@ public class APC extends Application {
         Text INFO_APC_otential = new Text(String.format("otential"));
         Text INFO_APC_C = new Text(" C");
         Text INFO_APC_alculator = new Text("alculator");
-        Text INFO_VersionInfo = new Text(String.format("%n       version 4.0"));
+        Text INFO_VersionInfo = new Text(String.format("%n       version 4.1"));
         INFO_APC_A.getStyleClass().add("INFO_APCTitle1");
         INFO_APC_P.getStyleClass().add("INFO_APCTitle1");
         INFO_APC_C.getStyleClass().add("INFO_APCTitle1");
@@ -535,37 +671,304 @@ public class APC extends Application {
         AppInfoGrid.add(InfoTitle, 5, 5);
 
         Label MakerLabel = new Label("개발");
-        MakerLabel.getStyleClass().add("AppInfoCategory");
+        MakerLabel.getStyleClass().add("AppInfoCategoryTitle");
         AppInfoGrid.add(MakerLabel, 5, 9);
         AppInfoGrid.add(WLabel(String.format(
-            "       BlueD981"
+            "       BlueD981" /*+ "\n"*/ +
+            ""
             )
         ), 5, 10);
 
         Label ArcaeaVersionLabel = new Label("대응 Arcaea 버전");
-        ArcaeaVersionLabel.getStyleClass().add("AppInfoCategory");
+        ArcaeaVersionLabel.getStyleClass().add("AppInfoCategoryTitle");
         AppInfoGrid.add(ArcaeaVersionLabel, 5, 13);
         AppInfoGrid.add(WLabel(String.format(
-            "       v7.0.255"
+            "       v7.0.255" /*+ "\n"*/ +
+            ""
             )
         ), 5, 14);
 
         Label FontLabel = new Label("폰트");
-        FontLabel.getStyleClass().add("AppInfoCategory");
+        FontLabel.getStyleClass().add("AppInfoCategoryTitle");
         AppInfoGrid.add(FontLabel, 5, 17);
         AppInfoGrid.add(WLabel(String.format(
-            "       [네이버 주식회사 | 프로그램 전체] 나눔고딕"
+            "       [네이버 주식회사 | 프로그램 전체] 나눔고딕" /*+ "\n"*/ +
+            ""
             )
         ), 5, 18);
 
-        AppInfoGrid.add(WLabel(""), 5, 22);
+        AppInfoGrid.add(new Label(""), 5, 21);
 
         ScrollPane AppInfoScroll = new ScrollPane(AppInfoGrid);
-        AppInfoScroll.getStyleClass().add("AppInfoScroll");
+        AppInfoScroll.getStyleClass().add("Panes");
         AppInfoScroll.setFitToWidth(true);
         AppInfoScroll.setFocusTraversable(false);
 
         return AppInfoScroll;
+    }
+
+    public int themeStatus;
+
+    public ScrollPane Settings() {
+        BackButton.setOpacity(BBActiveOpacity);
+        BackButton.setDisable(false);
+
+        GridPane settingsGrid = new GridPane();
+        settingsGrid.getStyleClass().add("Panes");
+        settingsGrid.setFocusTraversable(false);
+
+        settingsGrid.setVgap(10);
+        settingsGrid.setHgap(10);
+
+        ScrollPane settingsScroll = new ScrollPane(settingsGrid);
+        settingsScroll.getStyleClass().add("Panes");
+
+        Text SETTINGSTITLE = new Text("환경설정");
+        SETTINGSTITLE.setFocusTraversable(false);
+        SETTINGSTITLE.getStyleClass().add("SETTINGSTITLE");
+        settingsGrid.add(SETTINGSTITLE, 5, 5);
+
+
+        Label DisplaySettings = new Label("디스플레이 설정");
+        DisplaySettings.setFocusTraversable(false);
+        DisplaySettings.getStyleClass().add("settingsCategoryTitle");
+        settingsGrid.add(DisplaySettings, 5, 9);
+
+        ToggleGroup ThemeSelection = new ToggleGroup();
+        RadioButton LightTheme = new RadioButton("라이트 모드");
+        LightTheme.getStyleClass().add("RadioButton");
+        LightTheme.setToggleGroup(ThemeSelection);
+        RadioButton DarkTheme = new RadioButton("다크 모드");
+        DarkTheme.getStyleClass().add("RadioButton");
+        DarkTheme.setToggleGroup(ThemeSelection);
+        /*RadioButton CustomTheme = new RadioButton("커스텀 테마");
+        CustomTheme.getStyleClass().add("RadioButton");
+        CustomTheme.setToggleGroup(ThemeSelection);*/
+        GridPane ThemeGrid = new GridPane();
+        ThemeGrid.getStyleClass().add("Panes");
+        ThemeGrid.setHgap(50);
+        ThemeGrid.add(LightTheme, 0, 0);
+        ThemeGrid.add(DarkTheme, 1, 0);
+        settingsGrid.add(ThemeGrid, 5, 10);
+
+        if (settings.get("Theme", "Light").equals("Light")) {
+            settings.set("Theme", "Light");
+            LightTheme.setSelected(true);
+            DarkTheme.setSelected(false);
+            /*CustomTheme.setSelected(false)*/
+        }
+        else if (settings.get("Theme", "Light").equals("Dark")) {
+            settings.set("Theme", "Dark");
+            DarkTheme.setSelected(true);
+            LightTheme.setSelected(false);
+            /*CustomTheme.setSelected(false);*/
+        }
+        /*else if (settings.get("Theme", "Light").equals("Custom")) {
+            settings.set("Theme", "Custom");
+            CustomTheme.setSelected(true);
+            LightTheme.setSelected(false);
+            DarkTheme.setSelected(false);
+        }*/
+
+        ThemeSelection.selectedToggleProperty().addListener((obs, old, val) -> {
+            if (LightTheme.isSelected()) {
+                settings.set("Theme", "Light");
+                try {
+                    /*System.out.println(settingsScroll.getScene());*/
+                    String cssPath = getClass().getResource("/css/APCLight.css").toExternalForm();
+                    settingsScroll.getScene().getStylesheets().clear();
+                    settingsScroll.getScene().getStylesheets().add(cssPath);
+                    /*System.out.println("Light성공");*/
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                    try {
+                        /*System.out.println(settingsScroll.getScene());*/
+                        settingsScroll.getScene().getStylesheets().clear();
+                        settingsScroll.getScene().getStylesheets().add(new java.io.File("src/main/resources/css/APCLight.css").toURI().toURL().toExternalForm());
+                        /*System.out.println("Light성공");*/
+                    }
+                    catch (Exception f) {
+                        f.printStackTrace();
+                        /*System.out.println("Light실패");*/
+                    }
+                }
+                /*System.out.println(themeStatus);*/
+            }
+            else if (DarkTheme.isSelected()) {
+                settings.set("Theme", "Dark");
+                try {
+                    /*System.out.println(settingsScroll.getScene());*/
+                    String cssPath = getClass().getResource("/css/APCDark.css").toExternalForm();
+                    settingsScroll.getScene().getStylesheets().clear();
+                    settingsScroll.getScene().getStylesheets().add(cssPath);
+                    /*System.out.println("Dark성공");*/
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                    try {
+                        /*System.out.println(settingsScroll.getScene());*/
+                        settingsScroll.getScene().getStylesheets().clear();
+                        settingsScroll.getScene().getStylesheets().add(new java.io.File("src/main/resources/css/APCDark.css").toURI().toURL().toExternalForm());
+                        /*System.out.println("Dark성공");*/
+                    }
+                    catch (Exception f) {
+                        f.printStackTrace();
+                        /*System.out.println("Dark실패");*/
+                    }
+                }
+                /*System.out.println(themeStatus);*/
+            }
+            /*else if (CustomTheme.isSelected()) {
+                settings.set("Theme", "Custom");
+                try {
+                    String cssPath = getClass().getResource("/css/APCCustom.css").toExternalForm();
+                    settingsScroll.getScene().getStylesheets().clear();
+                    settingsScroll.getScene().getStylesheets().add(cssPath);
+                    System.out.println("Custom성공");
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                    try {
+                        settingsScroll.getScene().getStylesheets().clear();
+                        settingsScroll.getScene().getStylesheets().add(new java.io.File("src/main/resources/css/APCCustom.css").toURI().toURL().toExternalForm());
+                        System.out.println("Custom성공");
+                    }
+                    catch (Exception f) {
+                        f.printStackTrace();
+                        System.out.println("Custom실패");
+                    }
+                }
+                System.out.println(themeStatus);
+            }*/
+        });
+
+        Label clearCheckBoxDefaultSettings = new Label("클리어 체크박스 기본값 설정");
+        clearCheckBoxDefaultSettings.setFocusTraversable(false);
+        clearCheckBoxDefaultSettings.getStyleClass().add("settingsCategoryTitle");
+        settingsGrid.add(clearCheckBoxDefaultSettings, 5, 14);
+
+        ToggleGroup clearCheckBoxDefaultSelection = new ToggleGroup();
+        RadioButton clearChecked = new RadioButton("Track Complete");
+        clearChecked.getStyleClass().add("RadioButton");
+        clearChecked.setToggleGroup(clearCheckBoxDefaultSelection);
+        RadioButton clearUnchecked = new RadioButton("Track Lost");
+        clearUnchecked.getStyleClass().add("RadioButton");
+        clearUnchecked.setToggleGroup(clearCheckBoxDefaultSelection);
+        RadioButton clearFollowLatest = new RadioButton("최근 선택 유지");
+        clearFollowLatest.getStyleClass().add("RadioButton");
+        clearFollowLatest.setToggleGroup(clearCheckBoxDefaultSelection);
+        GridPane clearCheckBoxDefaultGrid = new GridPane();
+        clearCheckBoxDefaultGrid.getStyleClass().add("Panes");
+        clearCheckBoxDefaultGrid.setHgap(22);
+        clearCheckBoxDefaultGrid.setVgap(5);
+        clearCheckBoxDefaultGrid.add(clearChecked, 0, 0);
+        clearCheckBoxDefaultGrid.add(clearUnchecked, 1, 0);
+        clearCheckBoxDefaultGrid.add(clearFollowLatest, 0, 1);
+        settingsGrid.add(clearCheckBoxDefaultGrid, 5, 15);
+
+        if (settings.get("clearCheckBoxDefault", "Checked").equals("Checked")) {
+            settings.set("clearCheckBoxDefault", "Checked");
+            isCleared = true;
+            clearCheck.setSelected(true);
+            clearChecked.setSelected(true);
+            clearUnchecked.setSelected(false);
+            clearFollowLatest.setSelected(false);
+        }
+        else if (settings.get("clearCheckBoxDefault", "Checked").equals("Not Checked")) {
+            settings.set("clearCheckBoxDefault", "Not Checked");
+            isCleared = false;
+            clearCheck.setSelected(false);
+            clearUnchecked.setSelected(true);
+            clearChecked.setSelected(false);
+            clearFollowLatest.setSelected(false);
+        }
+        else if (settings.get("clearCheckBoxDefault", "Checked").equals("Follow Latest Decision")) {
+            settings.set("clearCheckBoxDefault", "Follow Latest Decision");
+            if (settings.get("clearLatest", "Track Complete").equals("Track Complete")) {
+                isCleared = true;
+                clearCheck.setSelected(true);
+            }
+            else if (settings.get("clearLatest", "Track Complete").equals("Track Lost")) {
+                isCleared = false;
+                clearCheck.setSelected(false);
+            }
+            clearFollowLatest.setSelected(true);
+            clearChecked.setSelected(false);
+            clearUnchecked.setSelected(false);
+        }
+
+        clearCheckBoxDefaultSelection.selectedToggleProperty().addListener((obs, old, val) -> {
+            if (clearChecked.isSelected()) {
+                settings.set("clearCheckBoxDefault", "Checked");
+                isCleared = true;
+                clearCheck.setSelected(true);
+            }
+            else if (clearUnchecked.isSelected()) {
+                settings.set("clearCheckBoxDefault", "Not Checked");
+                isCleared = false;
+                clearCheck.setSelected(false);
+            }
+            else if (clearFollowLatest.isSelected()) {
+                settings.set("clearCheckBoxDefault", "Follow Latest Decision");
+                if (settings.get("clearLatest", "Track Complete").equals("Track Complete")) {
+                    isCleared = true;
+                    clearCheck.setSelected(true);
+                }
+                else if (settings.get("clearLatest", "Track Complete").equals("Track Lost")) {
+                    isCleared = false;
+                    clearCheck.setSelected(false);
+                }
+            }
+        });
+
+        Label settingsResetLabel = new Label("설정 초기화");
+        settingsResetLabel.setFocusTraversable(false);
+        settingsResetLabel.getStyleClass().add("settingsCategoryTitle");
+        settingsGrid.add(settingsResetLabel, 5, 19);
+
+        Button SetSettingsToDefault = new Button("설정 초기화");
+        SetSettingsToDefault.getStyleClass().add("Buttons");
+        settingsGrid.add(SetSettingsToDefault, 5, 20);
+
+        SetSettingsToDefault.setOnAction(SetDefault -> {
+            settings.set("Theme", "Light");
+            LightTheme.setSelected(true);
+            DarkTheme.setSelected(false);
+            try {
+                /*System.out.println(settingsScroll.getScene());*/
+                String cssPath = getClass().getResource("/css/APCLight.css").toExternalForm();
+                settingsScroll.getScene().getStylesheets().clear();
+                settingsScroll.getScene().getStylesheets().add(cssPath);
+                /*System.out.println("Light성공");*/
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+                try {
+                    /*System.out.println(settingsScroll.getScene());*/
+                    settingsScroll.getScene().getStylesheets().clear();
+                    settingsScroll.getScene().getStylesheets().add(new java.io.File("src/main/resources/css/APCLight.css").toURI().toURL().toExternalForm());
+                    /*System.out.println("Light성공");*/
+                }
+                catch (Exception f) {
+                    f.printStackTrace();
+                    /*System.out.println("Light실패");*/
+                }
+            }
+            /*System.out.println(themeStatus);*/
+
+            settings.set("clearCheckBoxDefault", "Checked");
+            clearChecked.setSelected(true);
+            clearUnchecked.setSelected(false);
+            clearFollowLatest.setSelected(false);
+        });
+
+        settingsGrid.add(new Label(""), 5, 23);
+        
+        settingsScroll.setFitToWidth(true);
+        settingsScroll.setFocusTraversable(false);
+
+        return settingsScroll;
     }
 
     private void numInput() {

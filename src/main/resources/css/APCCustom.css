@@ -1,0 +1,209 @@
+.root {
+    -fx-font-family: "NanumGothic";
+    -fx-font-weight: normal;
+}
+
+
+
+.ErrorText {
+    -fx-font-family: "NanumGothic";
+    -fx-font-weight: bold;
+    -fx-text-fill: #ff3333;
+}
+
+
+
+.label.AppInfoCategory {
+    -fx-font-family: "NanumGothic";
+    -fx-font-weight: bold;
+    -fx-font-size: 18px;
+}
+.AppInfoGrid, .AppInfoScroll, .atip, .mnip, .settingsGridPane, .settingsScrollPane {
+    -fx-background-insets: 0 !important;
+    -fx-border-insets: 0 !important;
+    -fx-padding: 0 !important;
+    -fx-focus-color: transparent !important;
+    -fx-faint-focus-color: transparent !important;
+}
+
+
+
+.APCTitle1 {
+    -fx-font-family: "NanumGothic";
+    -fx-font-weight: bolder;
+    -fx-font-size: 20px;
+}
+.APCTitle2 {
+    -fx-font-family: "NanumGothic";
+    -fx-font-weight: bold;
+    -fx-font-size: 16px;
+}
+
+
+
+.INFO_APCTitle1 {
+    -fx-font-family: "NanumGothic";
+    -fx-font-weight: bolder;
+    -fx-font-size: 25px;
+}
+.INFO_APCTitle2 {
+    -fx-font-family: "NanumGothic";
+    -fx-font-weight: bold;
+    -fx-font-size: 21px;
+}
+.INFO_VersionInfo {
+    -fx-font-family: "NanumGothic";
+    -fx-font-weight: bold;
+    -fx-font-size: 15px;
+}
+
+
+
+.SETTINGSTITLE {
+    -fx-font-family: "NanumGothic";
+    -fx-font-weight: bolder;
+    -fx-font-size: 25;
+    -fx-text-fill: #333333;
+}
+.settingsCategoryTitle {
+    -fx-font-family: "NanumGothic";
+    -fx-font-weight: bold;
+    -fx-font-size: 18px;
+    -fx-text-fill: #333333;
+}
+
+
+
+.Buttons {
+    -fx-background-color: #dddddd;
+    -fx-text-fill: #333333;
+    -fx-font-family: "NanumGothic";
+    -fx-background-radius: 20px;
+    -fx-padding: 8px 16px;
+    -fx-cursor: hand;
+}
+.Buttons:hover {
+    -fx-background-color: #e8e8e8;
+}
+.Buttons:pressed {
+    -fx-background-color: #cccccc;
+    -fx-translate-y: 1px;
+}
+
+
+
+.BackButton {
+    -fx-background-color: #dddddd;
+    -fx-text-fill: #333333;
+    -fx-background-radius: 5;
+    -fx-cursor: hand;
+}
+.BackButton:hover {
+    -fx-background-color: #e8e8e8;
+}
+.BackButton:pressed {
+    -fx-background-color: #cccccc;
+    -fx-translate-y: 1px;
+}
+
+
+
+.text-field {
+    -fx-background-color: #dddddd;
+    -fx-text-fill: #333333;
+    -fx-prompt-text-fill: #888888;
+    -fx-background-radius: 20px;
+    -fx-border-color: transparent;
+    -fx-border-radius: 20px;
+}
+.text-field:focused {
+    -fx-background-color: e8e8e8;
+    -fx-border-color: #cccccc;
+}
+
+
+
+.check-box {
+    -fx-text-fill: #333333;
+    -fx-cursor: hand;
+}
+.check-box > .box {
+    -fx-background-color: #dddddd;
+    -fx-background-radius: 5px;
+    -fx-border-color: transparent;
+    -fx-border-radius: 5px;
+    -fx-background-insets: 0;
+}
+.check-box:selected > .box > .mark {
+    -fx-background-color: #eeeeee;
+}
+.check-box:selected > .box {
+    -fx-background-color: #399ddf;
+    -fx-border-color: #399ddf;
+}
+
+
+
+.table-view {
+    -fx-background-color: #d9d9d9;
+    -fx-border-color: transparent;
+    -fx-border-radius: 0;
+    -fx-background-radius: 0;
+    -fx-background-insets: 0;
+}
+.table-view .column-header-background {
+    -fx-background-color: #dddddd;
+    -fx-border-radius: 20px, 20px, 0, 0;
+    -fx-background-radius: 20px, 20px, 0, 0;
+}
+.table-view .column-header, .table-view .filler {
+    -fx-background-color: #dddddd;
+    -fx-border-radius: 20px, 20px, 0, 0;
+    -fx-background-radius: 20px, 20px, 0, 0;
+    -fx-border-color: transparent;
+}
+.table-view .column-header .label {
+    -fx-text-fill: #333333;
+    -fx-font-weight: bold;
+}
+.table-row-cell {
+    -fx-background-color: #eeeeee;
+    -fx-border-color: transparent;
+}
+.table-row-cell:odd {
+    -fx-background-color: #e3e3e3;
+}
+.table-row-cell:selected {
+    -fx-background-color: #71b2dd;
+}
+.table-cell {
+    -fx-text-fill: #333333;
+    -fx-border-color: transparent;
+}
+
+
+
+.context-menu {
+    -fx-text-fill: #333333;
+    -fx-background-color: #dddddd;
+    -fx-border-color: transparent;
+    -fx-background-radius: 20px;
+    -fx-border-color: 20px;
+}
+
+
+
+.menu-button {
+    -fx-text-fill: #333333;
+    -fx-background-color: #dddddd;
+    -fx-border-color: transparent;
+    -fx-background-radius: 20px;
+    -fx-border-color: 20px;
+}
+.menu-button:hover {
+    -fx-background-color: #e8e8e8;
+}
+.menu-button:pressed {
+    -fx-background-color: #cccccc;
+    -fx-translate-y: 1px;
+}
