@@ -42,10 +42,10 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 public class APC extends Application {
-    Font NanumGothicExtraBold = Font.loadFont(getClass().getResourceAsStream("/NanumFontSetup_TTF_GOTHIC/NanumFontSetup_TTF_GOTHIC/NanumGothicExtraBold.ttf"), 15);
-    Font NanumGothicBold = Font.loadFont(getClass().getResourceAsStream("/NanumFontSetup_TTF_GOTHIC/NanumFontSetup_TTF_GOTHIC/NanumGothicBold.ttf"), 15);
-    Font NanumGothic = Font.loadFont(getClass().getResourceAsStream("/NanumFontSetup_TTF_GOTHIC/NanumFontSetup_TTF_GOTHIC/NanumGothic.ttf"), 15);
-    Font NanumGothicLight = Font.loadFont(getClass().getResourceAsStream("/NanumFontSetup_TTF_GOTHIC/NanumFontSetup_TTF_GOTHIC/NanumGothicLight.ttf"), 15);
+    Font NanumGothicExtraBold = Font.loadFont(getClass().getResourceAsStream("/NanumFontSetup_TTF_GOTHIC/NanumGothicExtraBold.ttf"), 15);
+    Font NanumGothicBold = Font.loadFont(getClass().getResourceAsStream("/NanumFontSetup_TTF_GOTHIC/NanumGothicBold.ttf"), 15);
+    Font NanumGothic = Font.loadFont(getClass().getResourceAsStream("/NanumFontSetup_TTF_GOTHIC/NanumGothic.ttf"), 15);
+    Font NanumGothicLight = Font.loadFont(getClass().getResourceAsStream("/NanumFontSetup_TTF_GOTHIC/NanumGothicLight.ttf"), 15);
 
     public double bpStr;
 
@@ -276,7 +276,7 @@ public class APC extends Application {
 
         menu1.setFocusTraversable(false);
 
-        int MIHgap = 427;
+        int MIHgap = 400;
 
         GridPane menu_info = new GridPane();
         menu_info.getStyleClass().add("Panes");
