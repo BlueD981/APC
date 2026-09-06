@@ -15,6 +15,7 @@ import javafx.geometry.Pos;
 
 import javafx.scene.control.Button;
 import javafx.scene.control.cell.PropertyValueFactory;
+
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Label;
@@ -26,6 +27,8 @@ import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
+
+import javafx.scene.image.Image;
 
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
@@ -82,6 +85,14 @@ public class APC extends Application {
     public void start(Stage APCMain) {
         settings.loadSettings();
         /*System.out.println(settings.get("Theme", "ThemeDefault"));*/
+
+        try {
+            Image icon = new Image(getClass().getResourceAsStream("/APC_black.jpg"));
+            APCMain.getIcons().add(icon);
+        }
+        catch (Exception e) {
+            APCMain.getIcons().add(new Image("src/main/resources/APC_black.jpg"));
+        }
 
         bpError.getStyleClass().add("ErrorText");
         scoreError.getStyleClass().add("ErrorText");
