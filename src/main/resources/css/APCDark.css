@@ -190,6 +190,9 @@
     -fx-background-radius: 0;
     -fx-background-insets: 0;
 }
+.table-view .arrow {
+    -fx-padding: 3px;
+}
 .table-view .column-header-background {
     -fx-background-color: #2a2a2a;
     -fx-border-radius: 20px, 20px, 0, 0;
@@ -204,6 +207,7 @@
 .table-view .column-header .label {
     -fx-text-fill: #cccccc;
     -fx-font-weight: bold;
+    -fx-font-size: 10px;
 }
 .table-row-cell {
     -fx-background-color: #2d2d2d;

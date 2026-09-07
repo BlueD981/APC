@@ -70,7 +70,7 @@ public class APC extends Application {
     private StackPane rootLayout;
     private StackPane contentArea;
 
-    private String info = "Arcaea Potential Calculator (ver. 4.1)";
+    private String info = "Arcaea Potential Calculator (ver. 4.1.1)";
     
     private TextField scoreField = new TextField();
 
@@ -287,7 +287,7 @@ public class APC extends Application {
 
         menu1.setFocusTraversable(false);
 
-        int MIHgap = 400;
+        int MIHgap = 385;
 
         GridPane menu_info = new GridPane();
         menu_info.getStyleClass().add("Panes");
@@ -604,12 +604,16 @@ public class APC extends Application {
         titleCol.setCellValueFactory(new PropertyValueFactory<>("title"));
         diffCol.setCellValueFactory(new PropertyValueFactory<>("difficulty"));
         levelCol.setCellValueFactory(new PropertyValueFactory<>("lvl"));
-        titleCol.setMinWidth(149);
-        titleCol.setMaxWidth(149);
+        titleCol.setMinWidth(134);
+        titleCol.setMaxWidth(134);
         diffCol.setMinWidth(50);
         diffCol.setMaxWidth(50);
-        levelCol.setMinWidth(30);
-        levelCol.setMaxWidth(30);
+        levelCol.setMinWidth(45);
+        levelCol.setMaxWidth(45);
+
+        titleCol.setReorderable(false);
+        diffCol.setReorderable(false);
+        levelCol.setReorderable(false);
         
         searchResultTable.getColumns().clear();
         searchResultTable.getColumns().add(titleCol);
@@ -669,7 +673,7 @@ public class APC extends Application {
         Text INFO_APC_otential = new Text(String.format("otential"));
         Text INFO_APC_C = new Text(" C");
         Text INFO_APC_alculator = new Text("alculator");
-        Text INFO_VersionInfo = new Text(String.format("%n       version 4.1"));
+        Text INFO_VersionInfo = new Text(String.format("%n       version 4.1.1"));
         INFO_APC_A.getStyleClass().add("INFO_APCTitle1");
         INFO_APC_P.getStyleClass().add("INFO_APCTitle1");
         INFO_APC_C.getStyleClass().add("INFO_APCTitle1");
