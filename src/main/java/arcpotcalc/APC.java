@@ -70,7 +70,7 @@ public class APC extends Application {
     private StackPane rootLayout;
     private StackPane contentArea;
 
-    private String info = "Arcaea Potential Calculator (ver. 4.1.1)";
+    private String info = "Arcaea Potential Calculator (ver. 4.1.2)";
     
     private TextField scoreField = new TextField();
 
@@ -673,7 +673,7 @@ public class APC extends Application {
         Text INFO_APC_otential = new Text(String.format("otential"));
         Text INFO_APC_C = new Text(" C");
         Text INFO_APC_alculator = new Text("alculator");
-        Text INFO_VersionInfo = new Text(String.format("%n       version 4.1.1"));
+        Text INFO_VersionInfo = new Text(String.format("%n       version 4.1.2"));
         INFO_APC_A.getStyleClass().add("INFO_APCTitle1");
         INFO_APC_P.getStyleClass().add("INFO_APCTitle1");
         INFO_APC_C.getStyleClass().add("INFO_APCTitle1");
@@ -698,7 +698,7 @@ public class APC extends Application {
         ArcaeaVersionLabel.getStyleClass().add("AppInfoCategoryTitle");
         AppInfoGrid.add(ArcaeaVersionLabel, 5, 13);
         AppInfoGrid.add(WLabel(String.format(
-            "       v7.0.255" /*+ "\n"*/ +
+            "       v7.1" /*+ "\n"*/ +
             ""
             )
         ), 5, 14);
