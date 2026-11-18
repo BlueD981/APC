@@ -16,7 +16,8 @@ public class settings {
         if (SETTINGS.exists()) {
             try (FileInputStream fis = new FileInputStream(SETTINGS)) {
                 settingProperties.load(fis);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 e.printStackTrace();
                 System.out.println("실패");
             }
@@ -31,7 +32,8 @@ public class settings {
 
         try (FileOutputStream fos = new FileOutputStream(SETTINGS)) {
             settingProperties.store(fos, "Application Settings");
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             e.printStackTrace();
             System.out.println("실패");
         }

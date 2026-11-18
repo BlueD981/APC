@@ -107,4 +107,40 @@ public class APCLogic {
         }
         return "유효하지 않은 입력이 존재합니다.";
     }
+
+    public static Double APCLogic_B50(double bp, double score, boolean isCleared) {
+        if (score < 9800000) {
+            double scoreptt;
+            if (bp > ((9500000 - score)/300000)) {
+                scoreptt = bp + ((score - 9500000)/300000);
+            }
+            else {
+                scoreptt = 0.0;
+            }
+            if (isCleared) {
+                return scoreptt + 0.2;
+            }
+            else {
+                return scoreptt;
+            }
+        }
+        else if (score >= 9800000 && score < 10000000) {
+            double scoreptt = bp + 1 + ((score - 9800000)/200000);
+            if (isCleared) {
+                return scoreptt + 0.2;
+            }
+            else {
+                return scoreptt;
+            }
+        }
+        else if (score >= 10000000) {
+            if (isCleared) {
+                return bp + 2.2;
+            }
+            else {
+                return bp + 2;
+            }
+        }
+        return -1.0;
+    }
 }

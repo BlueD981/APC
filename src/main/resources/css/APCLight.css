@@ -4,6 +4,41 @@
     -fx-text-fill: #333333;
     -fx-background-color: #f4f4f4;
 }
+.text-field .B50Fields {
+    -fx-text-size: 10px;
+}
+
+
+
+
+.scroll-bar:vertical {
+    -fx-background-color: transparent;
+    -fx-pref-width: 10px;
+}
+.scroll-bar:horizontal {
+    -fx-background-color: transparent;
+    -fx-pref-height: 10px;
+}
+.scroll-bar .thumb {
+    -fx-background-color: #88888888;
+    -fx-background-radius: 10px;
+}
+.scroll-bar .thumb:hover {
+    -fx-background-color: #66666688;
+}
+.scroll-bar .thumb:pressed {
+    -fx-background-color: #44444488
+}
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-pref-height: 0px;
+}
+.scroll-bar .increment-button .increment-arrow,
+.scroll-bar .decrement-button .decrement-arrow {
+    -fx-background-color: transparent;
+    -fx-pref-height: 0px;
+}
 
 
 
@@ -77,10 +112,16 @@
 .SETTINGSTITLE {
     -fx-font-family: "NanumGothic";
     -fx-font-weight: bolder;
-    -fx-font-size: 25;
-    -fx-text-fill: #333333;
+    -fx-font-size: 30;
+    -fx-fill: #333333;
 }
 .settingsCategoryTitle {
+    -fx-font-family: "NanumGothic";
+    -fx-font-weight: bold;
+    -fx-font-size: 24px;
+    -fx-text-fill: #333333;
+}
+.settingsCategorySubTitle {
     -fx-font-family: "NanumGothic";
     -fx-font-weight: bold;
     -fx-font-size: 18px;
@@ -190,6 +231,9 @@
     -fx-background-radius: 0;
     -fx-background-insets: 0;
 }
+.table-view .arrow {
+    -fx-padding: 3px;
+}
 .table-view .column-header-background {
     -fx-background-color: #dddddd;
     -fx-border-radius: 20px, 20px, 0, 0;
@@ -204,6 +248,7 @@
 .table-view .column-header .label {
     -fx-text-fill: #333333;
     -fx-font-weight: bold;
+    -fx-font-size: 10px;
 }
 .table-row-cell {
     -fx-background-color: #eeeeee;
@@ -227,7 +272,7 @@
     -fx-background-color: #dddddd;
     -fx-border-color: transparent;
     -fx-background-radius: 20px;
-    -fx-border-color: 20px;
+    -fx-border-radius: 20px;
 }
 
 
@@ -237,7 +282,7 @@
     -fx-background-color: #dddddd;
     -fx-border-color: transparent;
     -fx-background-radius: 20px;
-    -fx-border-color: 20px;
+    -fx-border-radius: 20px;
 }
 .menu-button:hover {
     -fx-background-color: #e8e8e8;
