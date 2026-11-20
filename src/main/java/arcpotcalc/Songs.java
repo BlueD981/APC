@@ -1,7 +1,6 @@
 package arcpotcalc;
 
 import java.util.Arrays;
-import java.rmi.server.Operation;
 import java.util.ArrayList;
 
 public enum Songs {
@@ -576,6 +575,7 @@ public enum Songs {
     Somniomancer_null_set(145, 145, 0, "Somniomancer [null set]", "", "Crywolf", "", "5", 5.0, 869, "8", 8.2, 875, "9+", 9.9, 984, "10+", 10.9, 1221, "", 0, 0, "", "", "", "", "", 0),
     ALIVE(145, 145, 0, "ALIVE", "", "Obadiah Brown-Beach, Cristina Vee", "", "4", 4.5, 552, "7+", 7.8, 705, "10", 10.2, 1124, "", 0, 0, "", 0, 0, "", "", "", "", "", 0),
     Renegade_Arknights(145, 145, 0, "Renegade (Arknights)", "", "Jason Walsh, Substantial, X. ARI", "", "2", 2.5, 351, "5", 5.0, 490, "7+", 7.8, 611, "9", 9.0, 846, "", 0, 0, "", "", "", "", "", 0);
+
 
     private final double Index;
     private final double ETRIndex;

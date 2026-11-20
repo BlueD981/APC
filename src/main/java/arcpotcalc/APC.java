@@ -13,12 +13,9 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.beans.value.ChangeListener;
 
@@ -28,24 +25,13 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.CheckMenuItem;
-import javafx.scene.control.Label;
-import javafx.scene.control.MenuButton;
-import javafx.scene.control.RadioButton;
-import javafx.scene.control.RadioMenuItem;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleGroup;
-import javafx.scene.control.Tooltip;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 
 import javafx.scene.image.Image;
-
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 
@@ -89,23 +75,24 @@ public class APC extends Application {
     private StackPane rootLayout;
     private StackPane contentArea;
 
-    private String version = "5.0";
+    private String version = "5.1";
     private String info = String.format("Arcaea Potential Calculator (ver. %s)", version);
-
+    private String OS;
+    
     private String Username;
     
     private TextField scoreField = new TextField();
-
+    
     /* -------------------------------------------------------------------------------------------------------------- */
     /*                                                showErrorMessage                                                */
     /* -------------------------------------------------------------------------------------------------------------- */
-
+    
     Label ErrorMessageLabel = new Label();
-
+    
     private void showErrorMessage(String title, String message, String buttonMessage, int width, int height) {
         Stage alertStage = new Stage();
         alertStage.setTitle(title);
-
+        
         ErrorMessageLabel.setText(message);
         
         GridPane alertGrid1 = new GridPane();
@@ -180,13 +167,503 @@ public class APC extends Application {
         }
         
         ExitBtn.setDefaultButton(true);
-    
+        
         alertStage.setScene(alertScene);
         alertStage.setResizable(false);
         alertStage.initModality(Modality.APPLICATION_MODAL);
         alertStage.showAndWait();
     }
-
+    
+    /* -------------------------------------------------------------------------------------------------------------- */
+    /*                                                   saveWindow                                                   */
+    /* -------------------------------------------------------------------------------------------------------------- */
+    
+    Label saveTitleLabelold = new Label();
+    Label saveScoreLabelold = new Label();
+    Label saveClearLabelold = new Label();
+    Label saveTitleLabelnew = new Label();
+    Label saveScoreLabelnew = new Label();
+    
+    Label scoreDifference = new Label();
+    
+    String getPrettyScore(int score) {
+        String commaScore = String.format("%,d", score);
+        String commaScoreB = commaScore.replace(",", "\'");
+        String zeros = "00\'000\'000";
+        String ScoreWithZeros = String.format(zeros.substring(0, 10 - commaScoreB.length()) + commaScoreB);
+        return ScoreWithZeros;
+    }
+    
+    private void saveWindow(Songs song, boolean cleared, int score) {
+        Stage saveStage = new Stage();
+        saveStage.setTitle("세부 정보 입력");
+        
+        saveTitleLabelold.setPrefWidth(200);
+        saveScoreLabelold.setPrefWidth(150);
+        saveTitleLabelnew.setPrefWidth(200);
+        saveScoreLabelnew.setPrefWidth(140);
+        
+        boolean isCleared = true;
+        
+        MenuButton ClearCheckSave = new MenuButton();
+        
+        RadioMenuItem SaveSelPM = new RadioMenuItem("Pure Memory");
+        RadioMenuItem SaveSelFR = new RadioMenuItem("Full Recall");
+        RadioMenuItem SaveSelTC = new RadioMenuItem("Track Complete");
+        RadioMenuItem SaveSelTL = new RadioMenuItem("Track Lost");
+        
+        ToggleGroup SaveTG = new ToggleGroup();
+        SaveSelPM.setToggleGroup(SaveTG);
+        SaveSelFR.setToggleGroup(SaveTG);
+        SaveSelTC.setToggleGroup(SaveTG);
+        SaveSelTL.setToggleGroup(SaveTG);
+        
+        if (!cleared) {
+            SaveSelPM.setSelected(false);
+            SaveSelFR.setSelected(false);
+            SaveSelTC.setSelected(false);
+            SaveSelTL.setSelected(true);
+            ClearCheckSave.setText("L");
+        }
+        else {
+            if (diffInt == 0) {
+                if (settings.get("PSTClearStatus", "Track Complete").equals("Pure Memory")) {
+                    settings.set("PSTClearStatus", "Pure Memory");
+                    SaveSelPM.setSelected(true);
+                    SaveSelFR.setSelected(false);
+                    SaveSelTC.setSelected(false);
+                    SaveSelTL.setSelected(false);
+                    ClearCheckSave.setText("P");
+                    isCleared = true;
+                }
+                else if (settings.get("PSTClearStatus", "Track Complete").equals("Full Recall")) {
+                    settings.set("PSTClearStatus", "Full Recall");
+                    SaveSelPM.setSelected(false);
+                    SaveSelFR.setSelected(true);
+                    SaveSelTC.setSelected(false);
+                    SaveSelTL.setSelected(false);
+                    ClearCheckSave.setText("F");
+                    isCleared = true;
+                }
+                else if (settings.get("PSTClearStatus", "Track Complete").equals("Track Complete")) {
+                    settings.set("PSTClearStatus", "Track Complete");
+                    SaveSelPM.setSelected(false);
+                    SaveSelFR.setSelected(false);
+                    SaveSelTC.setSelected(true);
+                    SaveSelTL.setSelected(false);
+                    ClearCheckSave.setText("C");
+                    isCleared = true;
+                }
+                else if (settings.get("PSTClearStatus", "Track Complete").equals("Track Lost")) {
+                    settings.set("PSTClearStatus", "Track Lost");
+                    SaveSelPM.setSelected(false);
+                    SaveSelFR.setSelected(false);
+                    SaveSelTC.setSelected(false);
+                    SaveSelTL.setSelected(true);
+                    ClearCheckSave.setText("L");
+                    isCleared = false;
+                }
+            }
+            else if (diffInt == 1) {
+                if (settings.get("PRSClearStatus", "Track Complete").equals("Pure Memory")) {
+                    settings.set("PRSClearStatus", "Pure Memory");
+                    SaveSelPM.setSelected(true);
+                    SaveSelFR.setSelected(false);
+                    SaveSelTC.setSelected(false);
+                    SaveSelTL.setSelected(false);
+                    ClearCheckSave.setText("P");
+                    isCleared = true;
+                }
+                else if (settings.get("PRSClearStatus", "Track Complete").equals("Full Recall")) {
+                    settings.set("PRSClearStatus", "Full Recall");
+                    SaveSelPM.setSelected(false);
+                    SaveSelFR.setSelected(true);
+                    SaveSelTC.setSelected(false);
+                    SaveSelTL.setSelected(false);
+                    ClearCheckSave.setText("F");
+                    isCleared = true;
+                }
+                else if (settings.get("PRSClearStatus", "Track Complete").equals("Track Complete")) {
+                    settings.set("PRSClearStatus", "Track Complete");
+                    SaveSelPM.setSelected(false);
+                    SaveSelFR.setSelected(false);
+                    SaveSelTC.setSelected(true);
+                    SaveSelTL.setSelected(false);
+                    ClearCheckSave.setText("C");
+                    isCleared = true;
+                }
+                else if (settings.get("PRSClearStatus", "Track Complete").equals("Track Lost")) {
+                    settings.set("PRSClearStatus", "Track Lost");
+                    SaveSelPM.setSelected(false);
+                    SaveSelFR.setSelected(false);
+                    SaveSelTC.setSelected(false);
+                    SaveSelTL.setSelected(true);
+                    ClearCheckSave.setText("L");
+                    isCleared = false;
+                }
+            }
+            else if (diffInt == 2) {
+                if (settings.get("FTRClearStatus", "Track Complete").equals("Pure Memory")) {
+                    settings.set("FTRClearStatus", "Pure Memory");
+                    SaveSelPM.setSelected(true);
+                    SaveSelFR.setSelected(false);
+                    SaveSelTC.setSelected(false);
+                    SaveSelTL.setSelected(false);
+                    ClearCheckSave.setText("P");
+                    isCleared = true;
+                }
+                else if (settings.get("FTRClearStatus", "Track Complete").equals("Full Recall")) {
+                    settings.set("FTRClearStatus", "Full Recall");
+                    SaveSelPM.setSelected(false);
+                    SaveSelFR.setSelected(true);
+                    SaveSelTC.setSelected(false);
+                    SaveSelTL.setSelected(false);
+                    ClearCheckSave.setText("F");
+                    isCleared = true;
+                }
+                else if (settings.get("FTRClearStatus", "Track Complete").equals("Track Complete")) {
+                    settings.set("FTRClearStatus", "Track Complete");
+                    SaveSelPM.setSelected(false);
+                    SaveSelFR.setSelected(false);
+                    SaveSelTC.setSelected(true);
+                    SaveSelTL.setSelected(false);
+                    ClearCheckSave.setText("C");
+                    isCleared = true;
+                }
+                else if (settings.get("FTRClearStatus", "Track Complete").equals("Track Lost")) {
+                    settings.set("FTRClearStatus", "Track Lost");
+                    SaveSelPM.setSelected(false);
+                    SaveSelFR.setSelected(false);
+                    SaveSelTC.setSelected(false);
+                    SaveSelTL.setSelected(true);
+                    ClearCheckSave.setText("L");
+                    isCleared = false;
+                }
+            }
+            else if (diffInt == 3) {
+                if (settings.get("ETRClearStatus", "Track Complete").equals("Pure Memory")) {
+                    settings.set("ETRClearStatus", "Pure Memory");
+                    SaveSelPM.setSelected(true);
+                    SaveSelFR.setSelected(false);
+                    SaveSelTC.setSelected(false);
+                    SaveSelTL.setSelected(false);
+                    ClearCheckSave.setText("P");
+                    isCleared = true;
+                }
+                else if (settings.get("ETRClearStatus", "Track Complete").equals("Full Recall")) {
+                    settings.set("ETRClearStatus", "Full Recall");
+                    SaveSelPM.setSelected(false);
+                    SaveSelFR.setSelected(true);
+                    SaveSelTC.setSelected(false);
+                    SaveSelTL.setSelected(false);
+                    ClearCheckSave.setText("F");
+                    isCleared = true;
+                }
+                else if (settings.get("ETRClearStatus", "Track Complete").equals("Track Complete")) {
+                    settings.set("ETRClearStatus", "Track Complete");
+                    SaveSelPM.setSelected(false);
+                    SaveSelFR.setSelected(false);
+                    SaveSelTC.setSelected(true);
+                    SaveSelTL.setSelected(false);
+                    ClearCheckSave.setText("C");
+                    isCleared = true;
+                }
+                else if (settings.get("ETRClearStatus", "Track Complete").equals("Track Lost")) {
+                    settings.set("ETRClearStatus", "Track Lost");
+                    SaveSelPM.setSelected(false);
+                    SaveSelFR.setSelected(false);
+                    SaveSelTC.setSelected(false);
+                    SaveSelTL.setSelected(true);
+                    ClearCheckSave.setText("L");
+                    isCleared = false;
+                }
+            }
+            else if (diffInt == 4) {
+                if (settings.get("BYDClearStatus", "Track Complete").equals("Pure Memory")) {
+                    settings.set("BYDClearStatus", "Pure Memory");
+                    SaveSelPM.setSelected(true);
+                    SaveSelFR.setSelected(false);
+                    SaveSelTC.setSelected(false);
+                    SaveSelTL.setSelected(false);
+                    ClearCheckSave.setText("P");
+                    isCleared = true;
+                }
+                else if (settings.get("BYDClearStatus", "Track Complete").equals("Full Recall")) {
+                    settings.set("BYDClearStatus", "Full Recall");
+                    SaveSelPM.setSelected(false);
+                    SaveSelFR.setSelected(true);
+                    SaveSelTC.setSelected(false);
+                    SaveSelTL.setSelected(false);
+                    ClearCheckSave.setText("F");
+                    isCleared = true;
+                }
+                else if (settings.get("BYDClearStatus", "Track Complete").equals("Track Complete")) {
+                    settings.set("BYDClearStatus", "Track Complete");
+                    SaveSelPM.setSelected(false);
+                    SaveSelFR.setSelected(false);
+                    SaveSelTC.setSelected(true);
+                    SaveSelTL.setSelected(false);
+                    ClearCheckSave.setText("C");
+                    isCleared = true;
+                }
+                else if (settings.get("BYDClearStatus", "Track Complete").equals("Track Lost")) {
+                    settings.set("BYDClearStatus", "Track Lost");
+                    SaveSelPM.setSelected(false);
+                    SaveSelFR.setSelected(false);
+                    SaveSelTC.setSelected(false);
+                    SaveSelTL.setSelected(true);
+                    ClearCheckSave.setText("L");
+                    isCleared = false;
+                }
+            }
+        }
+        
+        SaveSelPM.setOnAction(a -> {
+            if (SaveSelPM.isSelected()) {
+                SaveSelPM.setSelected(true);
+                SaveSelFR.setSelected(false);
+                SaveSelTC.setSelected(false);
+                SaveSelTL.setSelected(false);
+                ClearCheckSave.setText("P");
+            }
+        });
+        SaveSelFR.setOnAction(a -> {
+            if (SaveSelFR.isSelected()) {
+                SaveSelPM.setSelected(false);
+                SaveSelFR.setSelected(true);
+                SaveSelTC.setSelected(false);
+                SaveSelTL.setSelected(false);
+                ClearCheckSave.setText("F");
+            }
+        });
+        SaveSelTC.setOnAction(a -> {
+            if (SaveSelTC.isSelected()) {
+                SaveSelPM.setSelected(false);
+                SaveSelFR.setSelected(false);
+                SaveSelTC.setSelected(true);
+                SaveSelTL.setSelected(false);
+                ClearCheckSave.setText("C");
+            }
+        });
+        SaveSelTL.setOnAction(a -> {
+            if (SaveSelTL.isSelected()) {
+                SaveSelPM.setSelected(false);
+                SaveSelFR.setSelected(false);
+                SaveSelTC.setSelected(false);
+                SaveSelTL.setSelected(true);
+                ClearCheckSave.setText("L");
+            }
+        });
+        
+        ClearCheckSave.getItems().clear();
+        ClearCheckSave.getItems().addAll(SaveSelPM, SaveSelFR, SaveSelTC, SaveSelTL);
+        ClearCheckSave.setPrefWidth(50);
+        SaveSelTC.setSelected(true);
+        
+        List<ScoreData> SDLCopy = new ArrayList<>();
+        try (FileReader reader = new FileReader(B50Location)) {
+            Type ListType = new TypeToken<List<ScoreData>>() {}.getType();
+            List<ScoreData> SDList = B50Builder.fromJson(reader, ListType);
+            if (SDList != null && !SDList.isEmpty()) {
+                SDLCopy = new ArrayList<>(SDList);
+                SDLCopy.sort(
+                    Comparator.comparingLong((ScoreData a) -> Math.round(a.getPotential() * 1000000.0))
+                    .reversed()
+                    .thenComparing(b -> {
+                        return b.getIndex();
+                    })
+                    .thenComparing(c -> {
+                        return c.getSong();
+                    })
+                );
+            }
+            else {
+                SDLCopy.clear();
+            }
+        }
+        catch (Exception e) {
+            //System.out.println("파일이 존재하지 않음");
+            B50jsonStarter(null);
+        }
+        
+        System.out.println(String.format("[%s %s] %s", song.getDiff(diffInt), song.getLevel(diffInt), song.getTitle(diffInt)));
+        
+        if (SDLCopy.size() > 0) {
+            boolean found = false;
+            for (ScoreData SD : SDLCopy) {
+                //System.out.println(song.getTitle(diffInt) + " | " + song.getDiff(diffInt) + " | " + song.getArtist(diffInt) + " / " + SD.getTitle() + " | " + SD.getDifficulty() + " | " + SD.getArtist());
+                if (SD.getTitle().equals(song.getTitle(diffInt)) && SD.getDifficulty().equals(song.getDiff(diffInt))) {
+                    saveTitleLabelold.setText(String.format("[%s %s] %s", SD.getDifficulty(), SD.getLevel(), SD.getTitle()));
+                    saveScoreLabelold.setText(String.format("[%s] %s", SD.getGrade(), SD.getPrettyScore()));
+                    saveClearLabelold.setText(SD.getShortClearStatus());
+                    saveTitleLabelnew.setText(String.format("[%s %s] %s", SD.getDifficulty(), SD.getLevel(), SD.getTitle()));
+                    if (SD.getScore() <= score) {
+                        scoreDifference.setText(String.format("( + %s )", getPrettyScore(score - SD.getScore())));
+                    }
+                    else if (SD.getScore() > score) {
+                        scoreDifference.setText(String.format("( - %s )", getPrettyScore(SD.getScore() - score)));
+                    }
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                saveTitleLabelold.setText(String.format("[%s %s] %s", song.getDiff(diffInt), song.getLevel(diffInt), song.getTitle(diffInt)));
+                saveScoreLabelold.setText("기록 없음");
+                saveClearLabelold.setText("-");
+                saveTitleLabelnew.setText(String.format("[%s %s] %s", song.getDiff(diffInt), song.getLevel(diffInt), song.getTitle(diffInt)));
+            }
+        }
+        else if (SDLCopy.size() == 0) {
+            saveTitleLabelold.setText(String.format("[%s %s] %s", song.getDiff(diffInt), song.getLevel(diffInt), song.getTitle(diffInt)));
+            saveScoreLabelold.setText("기록 없음");
+            saveClearLabelold.setText("-");
+            saveTitleLabelnew.setText(String.format("[%s %s] %s", song.getDiff(diffInt), song.getLevel(diffInt), song.getTitle(diffInt)));
+        }
+        if (score >= 9900000) {
+            saveScoreLabelnew.setText(String.format("[EX+] %s", getPrettyScore(score)));
+        }
+        else if (score >= 9800000 && score < 9900000) {
+            saveScoreLabelnew.setText(String.format("[EX] %s", getPrettyScore(score)));
+        }
+        else if (score >= 9500000 && score < 9800000) {
+            saveScoreLabelnew.setText(String.format("[AA] %s", getPrettyScore(score)));
+        }
+        else if (score >= 9200000 && score < 9500000) {
+            saveScoreLabelnew.setText(String.format("[A] %s", getPrettyScore(score)));
+        }
+        else if (score >= 8900000 && score < 9200000) {
+            saveScoreLabelnew.setText(String.format("[B] %s", getPrettyScore(score)));
+        }
+        else if (score >= 8600000 && score < 8900000) {
+            saveScoreLabelnew.setText(String.format("[C] %s", getPrettyScore(score)));
+        }
+        else if (score >= 0 && score < 8600000) {
+            saveScoreLabelnew.setText(String.format("[D] %s", getPrettyScore(score)));
+        }
+        
+        GridPane saveGrid1 = new GridPane();
+        saveGrid1.setHgap(25);
+        saveGrid1.setVgap(25);
+        
+        GridPane saveGrid2 = new GridPane();
+        saveGrid2.getStyleClass().add("Panes");
+        saveGrid2.setHgap(10);
+        saveGrid2.setVgap(10);
+        
+        GridPane savePane = new GridPane();
+        savePane.setHgap(25);
+        savePane.setVgap(25);
+        GridPane oldPane = new GridPane();
+        oldPane.setHgap(25);
+        oldPane.add(saveTitleLabelold, 0, 0);
+        oldPane.add(saveScoreLabelold, 1, 0);
+        oldPane.add(saveClearLabelold, 2, 0);
+        savePane.add(oldPane, 0, 0);
+        GridPane arrow = new GridPane(); {
+            arrow.setHgap(5);
+            arrow.add(new Label("▼"), 42, 0);
+            arrow.add(scoreDifference, 47, 0);
+            savePane.add(arrow, 0, 1);
+        }
+        GridPane newPane = new GridPane();
+        newPane.setHgap(25);
+        newPane.add(saveTitleLabelnew, 0, 0);
+        newPane.add(saveScoreLabelnew, 1, 0);
+        newPane.add(ClearCheckSave, 2, 0);
+        savePane.add(newPane, 0, 2);
+        saveGrid2.add(savePane, 0, 0);
+        
+        Button CancelBtn = new Button("취소");
+        CancelBtn.getStyleClass().add("Buttons");
+        CancelBtn.setOnAction(a -> {
+            saveStage.close();
+        });
+        
+        double Potential = APCLogic.APCLogic_B50(song.getConst(diffInt), score, isCleared);
+        
+        final List<ScoreData> SDLFinal = SDLCopy;
+        
+        Button SaveBtn = new Button("저장");
+        SaveBtn.getStyleClass().add("Buttons");
+        SaveBtn.setOnAction(a -> {
+            String selectedClearStatus = ((RadioMenuItem) SaveTG.getSelectedToggle()).getText();
+            final ScoreData SD = new ScoreData(song, song.getIndex(diffInt), song.getTitle(diffInt), song.getDiff(diffInt), song.getLevel(diffInt), song.getArtist(diffInt), score, selectedClearStatus, Potential);
+            B50jsonSetter(song, SDLFinal, SD, B50Location, diffInt);
+            saveStage.close();
+        });
+        
+        GridPane ButtonGrid = new GridPane();
+        ButtonGrid.setHgap(10);
+        ButtonGrid.setVgap(25);
+        ButtonGrid.add(CancelBtn, 32, 0);
+        ButtonGrid.add(SaveBtn, 33, 0);
+        
+        saveGrid1.add(saveGrid2, 1, 1);
+        saveGrid1.add(ButtonGrid, 1, 2);
+        
+        int width = 500;
+        int height = 220;
+        
+        Scene alertScene = new Scene(saveGrid1, width, height);
+        
+        try {
+            if (settings.get("Theme", "Light").equals("Light")) {
+                String cssPath = getClass().getResource("/css/APCLight.css").toExternalForm();
+                alertScene.getStylesheets().add(cssPath);
+                /*//System.out.println("성공");*/
+            }
+            else if (settings.get("Theme", "Light").equals("Dark")) {
+                String cssPath = getClass().getResource("/css/APCDark.css").toExternalForm();
+                alertScene.getStylesheets().add(cssPath);
+                /*//System.out.println("성공");*/
+            }
+            else if (settings.get("Theme", "Light").equals("Custom")) {
+                String cssPath = getClass().getResource("/css/APCCustom.css").toExternalForm();
+                alertScene.getStylesheets().add(cssPath);
+                /*//System.out.println("성공");*/
+            }
+            else {
+                String cssPath = getClass().getResource("/css/APCLight.css").toExternalForm();
+                settings.set("Theme", "Light");
+                alertScene.getStylesheets().add(cssPath);
+                
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            try {
+                if (settings.get("Theme", "Light").equals("Light")) {
+                    alertScene.getStylesheets().add(new java.io.File("src/main/resources/css/APCLight.css").toURI().toURL().toExternalForm());
+                    /*//System.out.println("성공");*/
+                }
+                else if (settings.get("Theme", "Light").equals("Dark")) {
+                    alertScene.getStylesheets().add(new java.io.File("src/main/resources/css/APCDark.css").toURI().toURL().toExternalForm());
+                    /*//System.out.println("성공");*/
+                }
+                else if (settings.get("Theme", "Light").equals("Custom")) {
+                    alertScene.getStylesheets().add(new java.io.File("src/main/resources/css/APCCustom.css").toURI().toURL().toExternalForm());
+                    /*//System.out.println("성공");*/
+                }
+                else {
+                    alertScene.getStylesheets().add(new java.io.File("src/main/resources/css/APCCustom.css").toURI().toURL().toExternalForm());
+                    settings.set("Theme", "Light");
+                }
+            }
+            catch (Exception f) {
+                f.printStackTrace();
+                /*//System.out.println("실패");*/
+            }
+        }
+        
+        SaveBtn.setDefaultButton(true);
+        
+        saveStage.setScene(alertScene);
+        saveStage.setResizable(false);
+        saveStage.initModality(Modality.APPLICATION_MODAL);
+        saveStage.showAndWait();
+    }
+    
     /* --------------------------------------------------------------------------------------------------------------- */
     /*                                                   showFullB50                                                   */
     /* --------------------------------------------------------------------------------------------------------------- */
@@ -195,13 +672,13 @@ public class APC extends Application {
     private Label B10AVGTextB = new Label();
     private Label B30AVGTextB = new Label();
     private Label B50AVGTextB = new Label();
-
+    
     private String UserPTTB;
-
+    
     private Text PTTTextB = new Text();
-
+    
     private TableView<ScoreData> B30MainTableB = new TableView<>();
-
+    
     private TableColumn<ScoreData, String> B30RIndexB = new TableColumn<>(String.format("순%n위"));
     private TableColumn<ScoreData, String> B30RDiffColB = new TableColumn<>("난이도");
     private TableColumn<ScoreData, String> B30RLevelColB = new TableColumn<>(String.format("레%n벨"));
@@ -210,9 +687,9 @@ public class APC extends Application {
     private TableColumn<ScoreData, String> B30RClearColB = new TableColumn<>("클리어");
     private TableColumn<ScoreData, Integer> B30RScoreColB = new TableColumn<>("점수");
     private TableColumn<ScoreData, Double> B30RPotentialColB = new TableColumn<>(String.format("플레이%n결과"));
-
+    
     private TableView<ScoreData> B50MainTableB = new TableView<>();
-
+    
     private TableColumn<ScoreData, String> B50RIndexB = new TableColumn<>(String.format("순%n위"));
     private TableColumn<ScoreData, String> B50RDiffColB = new TableColumn<>("난이도");
     private TableColumn<ScoreData, String> B50RLevelColB = new TableColumn<>(String.format("레%n벨"));
@@ -221,16 +698,16 @@ public class APC extends Application {
     private TableColumn<ScoreData, String> B50RClearColB = new TableColumn<>("클리어");
     private TableColumn<ScoreData, Integer> B50RScoreColB = new TableColumn<>("점수");
     private TableColumn<ScoreData, Double> B50RPotentialColB = new TableColumn<>(String.format("플레이%n결과"));
-
+    
     private void showFullB50(String title, int width, int height) {
         Stage FullB50Stage = new Stage();
         FullB50Stage.setTitle(String.format(info + " | " +title));
-
+        
         GridPane FullB50Grid = new GridPane();
         FullB50Grid.getStyleClass().add("Panes");
         FullB50Grid.setHgap(10);
         FullB50Grid.setVgap(10);
-
+        
         UsernameTextB.setText(Username);
         UsernameTextB.setWrapText(true);
         UsernameTextB.setMaxWidth(360);
@@ -264,9 +741,9 @@ public class APC extends Application {
         Label B50AVGSplitter = new Label("|");
         B50AVGTitle.getStyleClass().add("INFO_VersionInfo");
         B50AVGSplitter.getStyleClass().add("INFO_VersionInfo");
-
+        
         Scene FullB50Scene = new Scene(FullB50Grid, width, height);
-
+        
         try {
             Image icon = new Image(getClass().getResourceAsStream("/APC_black.jpg"));
             FullB50Stage.getIcons().add(icon);
@@ -274,7 +751,7 @@ public class APC extends Application {
         catch (Exception e) {
             FullB50Stage.getIcons().add(new Image("src/main/resources/APC_black.jpg"));
         }
-
+        
         try {
             if (settings.get("Theme", "Light").equals("Light")) {
                 String cssPath = getClass().getResource("/css/APCLight.css").toExternalForm();
@@ -295,7 +772,7 @@ public class APC extends Application {
                 String cssPath = getClass().getResource("/css/APCLight.css").toExternalForm();
                 settings.set("Theme", "Light");
                 FullB50Scene.getStylesheets().add(cssPath);
-
+                
             }
         }
         catch (Exception e) {
@@ -323,7 +800,7 @@ public class APC extends Application {
                 /*//System.out.println("실패");*/
             }
         }
-
+        
         List<ScoreData> SDLCopy = new ArrayList<>();
         try (FileReader reader = new FileReader(B50Location)) {
             Type ListType = new TypeToken<List<ScoreData>>() {}.getType();
@@ -367,9 +844,9 @@ public class APC extends Application {
                 SDL30 = SDLCopy;
             }
         }
-
+        
         ObservableList<ScoreData> SDL30Obs = FXCollections.observableArrayList(SDL30);
-
+        
         B30RIndexB.setReorderable(false);
         B30RIndexB.setSortable(false);
         B30RDiffColB.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getDifficulty()));
@@ -393,9 +870,9 @@ public class APC extends Application {
         B30RPotentialColB.setCellValueFactory(cellData -> new SimpleDoubleProperty(cellData.getValue().getPotential()).asObject());
         B30RPotentialColB.setReorderable(false);
         B30RPotentialColB.setSortable(false);
-
+        
         ObservableList<ScoreData> SDL50Obs = FXCollections.observableArrayList(SDL50);
-
+        
         B50RIndexB.setReorderable(false);
         B50RIndexB.setSortable(false);
         B50RDiffColB.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getDifficulty()));
@@ -419,11 +896,11 @@ public class APC extends Application {
         B50RPotentialColB.setCellValueFactory(cellData -> new SimpleDoubleProperty(cellData.getValue().getPotential()).asObject());
         B50RPotentialColB.setReorderable(false);
         B50RPotentialColB.setSortable(false);
-
-
+        
+        
         B30RTitleColB.setCellFactory(column -> new TableCell<ScoreData, String>() {
             private final Tooltip tooltip = new Tooltip();
-
+            
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
@@ -437,7 +914,7 @@ public class APC extends Application {
                 }
             }
         });
-
+        
         B30RPotentialColB.setCellFactory(column -> new TableCell<ScoreData, Double>() {
             @Override
             protected void updateItem(Double item, boolean empty) {
@@ -460,14 +937,14 @@ public class APC extends Application {
                 } else {
                     String commaScore = String.format("%,d", item);
                     String commaScoreB = commaScore.replace(",", "\'");
-
+                    
                     String zeros = "00\'000\'000";
-
+                    
                     setText(zeros.substring(0, 10 - commaScoreB.length()) + commaScoreB);
                 }
             }
         });
-
+        
         B30RIndexB.setCellFactory(column -> new TableCell<ScoreData, String>() {
             @Override
             protected void updateItem(String item, boolean empty) {
@@ -479,10 +956,10 @@ public class APC extends Application {
                 }
             }
         });
-
+        
         B50RTitleColB.setCellFactory(column -> new TableCell<ScoreData, String>() {
             private final Tooltip tooltip = new Tooltip();
-
+            
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
@@ -496,7 +973,7 @@ public class APC extends Application {
                 }
             }
         });
-
+        
         B50RPotentialColB.setCellFactory(column -> new TableCell<ScoreData, Double>() {
             @Override
             protected void updateItem(Double item, boolean empty) {
@@ -519,14 +996,14 @@ public class APC extends Application {
                 } else {
                     String commaScore = String.format("%,d", item);
                     String commaScoreB = commaScore.replace(",", "\'");
-
+                    
                     String zeros = "00\'000\'000";
-
+                    
                     setText(zeros.substring(0, 10 - commaScoreB.length()) + commaScoreB);
                 }
             }
         });
-
+        
         B50RIndexB.setCellFactory(column -> new TableCell<ScoreData, String>() {
             @Override
             protected void updateItem(String item, boolean empty) {
@@ -538,72 +1015,72 @@ public class APC extends Application {
                 }
             }
         });
-
+        
         int B50RIWidth = 25;
         B30RIndexB.setMinWidth(B50RIWidth);
         B30RIndexB.setMaxWidth(B50RIWidth);
         B50RIndexB.setMinWidth(B50RIWidth);
         B50RIndexB.setMaxWidth(B50RIWidth);
-
+        
         int B50RDWidth = 35;
         B30RDiffColB.setMinWidth(B50RDWidth);
         B30RDiffColB.setMaxWidth(B50RDWidth);
         B50RDiffColB.setMinWidth(B50RDWidth);
         B50RDiffColB.setMaxWidth(B50RDWidth);
-
+        
         int B50RLWidth = 35;
         B30RLevelColB.setMinWidth(B50RLWidth);
         B30RLevelColB.setMaxWidth(B50RLWidth);
         B50RLevelColB.setMinWidth(B50RLWidth);
         B50RLevelColB.setMaxWidth(B50RLWidth);
-
+        
         int B50RTWidth = 180;
         B30RTitleColB.setMinWidth(B50RTWidth);
         B30RTitleColB.setMaxWidth(B50RTWidth);
         B50RTitleColB.setMinWidth(B50RTWidth);
         B50RTitleColB.setMaxWidth(B50RTWidth);
-
+        
         int B50RGWidth = 35;
         B30RGradeColB.setMinWidth(B50RGWidth);
         B30RGradeColB.setMaxWidth(B50RGWidth);
         B50RGradeColB.setMinWidth(B50RGWidth);
         B50RGradeColB.setMaxWidth(B50RGWidth);
-
+        
         int B50RCWidth = 35;
         B30RClearColB.setMinWidth(B50RCWidth);
         B30RClearColB.setMaxWidth(B50RCWidth);
         B50RClearColB.setMinWidth(B50RCWidth);
         B50RClearColB.setMaxWidth(B50RCWidth);
-
+        
         int B50RSWidth = 85;
         B30RScoreColB.setMinWidth(B50RSWidth);
         B30RScoreColB.setMaxWidth(B50RSWidth);
         B50RScoreColB.setMinWidth(B50RSWidth);
         B50RScoreColB.setMaxWidth(B50RSWidth);
-
+        
         int B50RPWidth = 50;
         B30RPotentialColB.setMinWidth(B50RPWidth);
         B30RPotentialColB.setMaxWidth(B50RPWidth);
         B50RPotentialColB.setMinWidth(B50RPWidth);
         B50RPotentialColB.setMaxWidth(B50RPWidth);
-
+        
         B30MainTableB.setItems(SDL30Obs);
         B50MainTableB.setItems(SDL50Obs);
-
+        
         Rectangle clip30 = new Rectangle();
         clip30.widthProperty().bind(B30MainTableB.widthProperty());
         clip30.heightProperty().bind(B30MainTableB.heightProperty());
         clip30.setArcWidth(40);
         clip30.setArcHeight(40);
         B30MainTableB.setClip(clip30);
-
+        
         Rectangle clip50 = new Rectangle();
         clip50.widthProperty().bind(B50MainTableB.widthProperty());
         clip50.heightProperty().bind(B50MainTableB.heightProperty());
         clip50.setArcWidth(40);
         clip50.setArcHeight(40);
         B50MainTableB.setClip(clip50);
-
+        
         B30MainTableB.getColumns().clear();
         B30MainTableB.getColumns().add(B30RIndexB);
         B30MainTableB.getColumns().add(B30RDiffColB);
@@ -613,7 +1090,7 @@ public class APC extends Application {
         B30MainTableB.getColumns().add(B30RClearColB);
         B30MainTableB.getColumns().add(B30RScoreColB);
         B30MainTableB.getColumns().add(B30RPotentialColB);
-
+        
         B50MainTableB.getColumns().clear();
         B50MainTableB.getColumns().add(B50RIndexB);
         B50MainTableB.getColumns().add(B50RDiffColB);
@@ -623,12 +1100,12 @@ public class APC extends Application {
         B50MainTableB.getColumns().add(B50RClearColB);
         B50MainTableB.getColumns().add(B50RScoreColB);
         B50MainTableB.getColumns().add(B50RPotentialColB);
-
+        
         B30MainTableB.setMinHeight(812);
         B30MainTableB.setMinHeight(812);
         B30MainTableB.setMaxWidth(490);
         B30MainTableB.setMaxWidth(490);
-
+        
         GridPane B50SubPaneB = new GridPane();
         B50SubPaneB.setHgap(10);
         B50SubPaneB.setVgap(5);
@@ -641,36 +1118,36 @@ public class APC extends Application {
         B50SubPaneB.add(B50AVGTitle, 0, 2);
         B50SubPaneB.add(B50AVGSplitter, 1, 2);
         B50SubPaneB.add(B50AVGTextB, 2, 2);
-
+        
         GridPane FullB50SubGrid1 = new GridPane();
         FullB50SubGrid1.setFocusTraversable(false);
         FullB50SubGrid1.setHgap(10);
         FullB50SubGrid1.setVgap(10);
-
+        
         GridPane FullB50SubGrid2 = new GridPane();
         FullB50SubGrid2.setFocusTraversable(false);
         FullB50SubGrid2.setHgap(10);
         FullB50SubGrid2.setVgap(10);
-
+        
         GridPane FullB50SubGrid3 = new GridPane();
         FullB50SubGrid3.setFocusTraversable(false);
         FullB50SubGrid3.setHgap(10);
         FullB50SubGrid3.setVgap(10);
-
+        
         GridPane FullB50SubGrid4 = new GridPane();
         FullB50SubGrid4.setFocusTraversable(false);
         FullB50SubGrid4.setHgap(13);
         FullB50SubGrid4.setVgap(5);
-
+        
         B50MainTableB.setMinHeight(552);
         B50MainTableB.setMinHeight(552);
         B50MainTableB.setMaxWidth(490);
         B50MainTableB.setMaxWidth(490);
-
+        
         FullB50SubGrid1.add(B30MainTableB, 0, 0);
         FullB50SubGrid2.add(B50MainTableB, 0, 0);
         FullB50SubGrid2.add(FullB50SubGrid3, 0, 1);
-
+        
         FullB50SubGrid4.add(UsernameTitle, 0, 0);
         FullB50SubGrid4.add(BIGSPLITTER1, 1, 0);
         FullB50SubGrid4.add(UsernameTextB, 2, 0);
@@ -680,41 +1157,137 @@ public class APC extends Application {
         
         FullB50SubGrid3.add(FullB50SubGrid4, 3, 3);
         FullB50SubGrid3.add(B50SubPaneB, 3, 4);
-
+        
         FullB50Grid.add(FullB50SubGrid1, 5, 5);
         FullB50Grid.add(FullB50SubGrid2, 6, 5);
-
+        
         FullB50Stage.setScene(FullB50Scene);
         FullB50Stage.setResizable(false);
         FullB50Stage.initModality(Modality.APPLICATION_MODAL);
         FullB50Stage.showAndWait();
     }
-
+    
     /* -------------------------------------------------------------------------------------------------------------- */
     /*                                                     WLabel                                                     */
     /* -------------------------------------------------------------------------------------------------------------- */
-
+    
     private Label WLabel(String text) {
         Label label = new Label(text);
         label.setWrapText(true);
         label.setMaxWidth(Double.MAX_VALUE);
         return label;
     }
-
+    
     /* --------------------------------------------------------------------------------------------------------------- */
     /*                                                      start                                                      */
     /* --------------------------------------------------------------------------------------------------------------- */
+    
+    MenuBar menuBarStarter() {
+        MenuBar menuBar = new MenuBar();
+        menuBar.setUseSystemMenuBar(true);
+        
+        System.out.println(OS);
+        
+        Menu pageMenu = new Menu("페이지");
 
+        MenuItem MainMenuMenu = new MenuItem("메인 메뉴");
+        MainMenuMenu.setOnAction(MIMA -> {
+            CA.clear();
+            CA.add(mainMenu());
+        });
+        MainMenuMenu.setAccelerator(
+            new KeyCodeCombination(KeyCode.DIGIT0, KeyCombination.SHORTCUT_DOWN)
+        );
+
+        MenuItem ManualInputMenu = new MenuItem("직접 입력");
+        ManualInputMenu.setOnAction(MIMA -> {
+            CA.clear();
+            CA.add(ManualInput());
+        });
+        ManualInputMenu.setAccelerator(
+            new KeyCodeCombination(KeyCode.DIGIT1, KeyCombination.SHORTCUT_DOWN)
+        );
+
+        MenuItem AutoInputMenu = new MenuItem("곡 검색 및 입력");
+        AutoInputMenu.setOnAction(AIMA -> {
+            CA.clear();
+            CA.add(AutoInput());
+        });
+        AutoInputMenu.setAccelerator(
+            new KeyCodeCombination(KeyCode.DIGIT2, KeyCombination.SHORTCUT_DOWN)
+        );
+
+        MenuItem B50Menu = new MenuItem("B50 조회 및 관리");
+        B50Menu.setOnAction(B50MA -> {
+            CA.clear();
+            CA.add(B50());
+        });
+        B50Menu.setAccelerator(
+            new KeyCodeCombination(KeyCode.DIGIT3, KeyCombination.SHORTCUT_DOWN)
+        );
+
+        MenuItem SDAutoInputMenu = new MenuItem("스코어 데이터 자동 입력");
+        SDAutoInputMenu.setOnAction(SDAIMA -> {
+            CA.clear();
+            CA.add(B50Manage());
+        });
+        SDAutoInputMenu.setAccelerator(
+            new KeyCodeCombination(KeyCode.DIGIT1, KeyCombination.ALT_DOWN, KeyCombination.SHORTCUT_DOWN)
+        );
+
+        MenuItem SDManualInputMenu = new MenuItem("스코어 데이터 수동 입력");
+        SDManualInputMenu.setOnAction(SDMIMA -> {
+            CA.clear();
+            CA.add(B50Input());
+        });
+        SDManualInputMenu.setAccelerator(
+            new KeyCodeCombination(KeyCode.DIGIT2, KeyCombination.ALT_DOWN, KeyCombination.SHORTCUT_DOWN)
+        );
+        
+        MenuItem SettingsMenu = new MenuItem("설정");
+        SettingsMenu.setOnAction(SMA -> {
+            CA.clear();
+            CA.add(Settings());
+        });
+        SettingsMenu.setAccelerator(
+            new KeyCodeCombination(KeyCode.DIGIT4, KeyCombination.SHORTCUT_DOWN)
+        );
+
+        MenuItem AppInfoMenu = new MenuItem("앱 정보");
+        AppInfoMenu.setOnAction(AIMA -> {
+            CA.clear();
+            CA.add(AppInfo());
+        });
+        AppInfoMenu.setAccelerator(
+            new KeyCodeCombination(KeyCode.DIGIT5, KeyCombination.SHORTCUT_DOWN)
+        );
+
+        pageMenu.getItems().addAll(MainMenuMenu, ManualInputMenu, AutoInputMenu, B50Menu, SDAutoInputMenu, SDManualInputMenu, SettingsMenu, AppInfoMenu);
+        
+        menuBar.getMenus().add(pageMenu);
+        return menuBar;
+    }
+
+    boolean isMacOSX() {
+        return OS.toLowerCase().contains("mac");
+    }
+    
     File B50Location = new File(System.getProperty("user.home"), ".APC/ScoreData.json");
-
+    
     Gson B50Builder = new GsonBuilder().setPrettyPrinting().create();
     Gson Gson = new Gson();
-
+    
     @Override
     public void start(Stage APCMain) {
+        try {
+            OS = System.getProperty("os.name", "");
+        }
+        catch (Exception e) {
+            OS = "";
+        }
         settings.loadSettings();
         /*//System.out.println(settings.get("Theme", "ThemeDefault"));*/
-
+        
         if (settings.get("Username", null) == null) {
             settings.set("Username", "Username");
         }
@@ -744,24 +1317,24 @@ public class APC extends Application {
 
         RL = rootLayout.getChildren();
         CA = contentArea.getChildren();
-
+        
         BackButton = new Button("◀");
         BackButton.setStyle("-fx-font-size: 10px;");
         BackButton.setPrefSize(25, 25);
         BackButton.setFocusTraversable(false);
-
+        
         BackButton.getStyleClass().add("BackButton");
-
+        
         StackPane.setAlignment(BackButton, Pos.TOP_LEFT);
         StackPane.setMargin(BackButton, new Insets(15, 0, 0, 15));
-
+        
         BackButton.setOnAction(back -> {
             go_back();
         });
-
+        
         CA.add(mainMenu());
         RL.addAll(contentArea, BackButton);
-
+        
         Scene primaryScene = new Scene(rootLayout, 640, 360);
         try {
             if (settings.get("Theme", "Light").equals("Light")) {
@@ -783,7 +1356,7 @@ public class APC extends Application {
                 String cssPath = getClass().getResource("/css/APCLight.css").toExternalForm();
                 settings.set("Theme", "Light");
                 primaryScene.getStylesheets().add(cssPath);
-
+                
             }
         }
         catch (Exception e) {
@@ -879,16 +1452,78 @@ public class APC extends Application {
         catch (Exception e) {
             e.printStackTrace();
         }
-
+        
+        if (isMacOSX()) {
+            RL.add(menuBarStarter());
+        }
+        else {
+            primaryScene.getAccelerators().put(
+                new KeyCodeCombination(KeyCode.DIGIT0, KeyCombination.SHORTCUT_DOWN),
+                () -> {
+                    CA.clear();
+                    CA.add(mainMenu());
+                }
+            );
+            primaryScene.getAccelerators().put(
+                new KeyCodeCombination(KeyCode.DIGIT1, KeyCombination.SHORTCUT_DOWN),
+                () -> {
+                    CA.clear();
+                    CA.add(ManualInput());
+                }
+            );
+            primaryScene.getAccelerators().put(
+                new KeyCodeCombination(KeyCode.DIGIT2, KeyCombination.SHORTCUT_DOWN),
+                () -> {
+                    CA.clear();
+                    CA.add(AutoInput());
+                }
+            );
+            primaryScene.getAccelerators().put(
+                new KeyCodeCombination(KeyCode.DIGIT3, KeyCombination.SHORTCUT_DOWN),
+                () -> {
+                    CA.clear();
+                    CA.add(B50());
+                }
+            );
+            primaryScene.getAccelerators().put(
+                new KeyCodeCombination(KeyCode.DIGIT1, KeyCombination.ALT_DOWN, KeyCombination.SHORTCUT_DOWN),
+                () -> {
+                    CA.clear();
+                    CA.add(B50Manage());
+                }
+            );
+            primaryScene.getAccelerators().put(
+                new KeyCodeCombination(KeyCode.DIGIT2, KeyCombination.ALT_DOWN, KeyCombination.SHORTCUT_DOWN),
+                () -> {
+                    CA.clear();
+                    CA.add(B50Input());
+                }
+            );
+            primaryScene.getAccelerators().put(
+                new KeyCodeCombination(KeyCode.DIGIT4, KeyCombination.SHORTCUT_DOWN),
+                () -> {
+                    CA.clear();
+                    CA.add(Settings());
+                }
+            );
+            primaryScene.getAccelerators().put(
+                new KeyCodeCombination(KeyCode.DIGIT5, KeyCombination.SHORTCUT_DOWN),
+                () -> {
+                    CA.clear();
+                    CA.add(AppInfo());
+                }
+            );
+        }
+        
         APCMain.setScene(primaryScene);
         APCMain.setResizable(false);
         APCMain.show();
     }
-
+    
     /* --------------------------------------------------------------------------------------------------------------- */
     /*                                                     go_back                                                     */
     /* --------------------------------------------------------------------------------------------------------------- */
-
+    
     public void go_back() {
         bpField.textProperty().removeListener(bpListener);
         scoreField.textProperty().removeListener(ManualScoreListener);
@@ -1397,11 +2032,25 @@ public class APC extends Application {
         scoreFieldPane.setHgap(10);
         scoreField.setPromptText("여기에 점수 입력");
         scoreField.textProperty().addListener(AutoScoreListener);
-        scoreField.setMinWidth(200);
-        scoreField.setMaxWidth(200);
+        scoreField.setMinWidth(130);
+        scoreField.setMaxWidth(130);
+
+        Button AutoInputApplyButton = new Button("저장");
+        AutoInputApplyButton.getStyleClass().add("Buttons");
+        AutoInputApplyButton.setOnAction(AIAB -> {
+            try {
+                int score = Integer.parseInt(scoreField.getText());
+                if (score < 0 || score > 10000000 + song.getNotes(diffInt)) throw new Exception();
+                saveWindow(song, isCleared, score);
+            }
+            catch (Exception e) {
+                showErrorMessage("점수 확인", String.format("유효하지 않은 점수입니다." + "%n" + "점수는 %s 이하, 0 이상의 정수여야 합니다.", 10000000 + song.getNotes(diffInt)), "확인", 395, 120);
+            }
+        });
 
         scoreFieldPane.add(scoreField, 0, 0);
         scoreFieldPane.add(clearCheck, 1, 0);
+        scoreFieldPane.add(AutoInputApplyButton, 2, 0);
         clearCheck.selectedProperty().addListener(clearCheckListener);
         atip.add(scoreFieldPane, 7, 6);
 
@@ -1520,6 +2169,14 @@ public class APC extends Application {
         else if (PTT >= 13.000 && PTT < 13.500) {
             UserPTT = String.format("★★★ | %.3f", PTT);
             UserPTTB = String.format("[ ★★★ ] %.3f", PTT);
+        }
+        else if (PTT >= 13.500 && PTT < 13.999) {
+            UserPTT = String.format("★★★★ | %.3f", PTT);
+            UserPTTB = String.format("[ ★★★★ ] %.3f", PTT);
+        }
+        else if (PTT >= 14.000 && PTT < 14.500) {
+            UserPTT = String.format("★★★★★ | %.3f", PTT);
+            UserPTTB = String.format("[ ★★★★★ ] %.3f", PTT);
         }
         else {
             UserPTT = String.format("%.3f", PTT);
@@ -1774,10 +2431,10 @@ public class APC extends Application {
 
         public ScoreData() {}
 
-        public ScoreData(Songs Song, double Index, String Title, String Difficulty, String Level, String Artist, int Score, String ClearStatus, double Potential) {
+        public ScoreData(Songs Song, double UpdateIndex, String Title, String Difficulty, String Level, String Artist, int Score, String ClearStatus, double Potential) {
             this.Song = Song;
 
-            this.Index = Index;
+            this.Index = UpdateIndex;
 
             this.Title = Title;
             this.Difficulty = Difficulty; this.Level = Level;
@@ -1835,6 +2492,13 @@ public class APC extends Application {
         }
         int getScore() {
             return Score;
+        }
+        String getPrettyScore() {
+            String commaScore = String.format("%,d", Score);
+            String commaScoreB = commaScore.replace(",", "\'");
+            String zeros = "00\'000\'000";
+            String ScoreWithZeros = String.format(zeros.substring(0, 10 - commaScoreB.length()) + commaScoreB);
+            return ScoreWithZeros;
         }
         String getClearStatus() {
             return ClearStatus;
@@ -1904,44 +2568,43 @@ public class APC extends Application {
         }
     }
 
-    public void B50jsonSetter(List<ScoreData> List, ScoreData SD, File Location, int DiffIndex) {
-        boolean Changed = false;
+    public void B50jsonSetter(Songs song, List<ScoreData> list, ScoreData SD, File Location, int DiffIndex) {
         if (Location.exists() && Location.length() > 0) {
             try (FileReader reader = new FileReader(Location)) {
                 Type B50ListType = new TypeToken<List<ScoreData>>() {}.getType();
-                        
                 List<ScoreData> SDList = B50Builder.fromJson(reader, B50ListType);
-                if (SDList != null) {
-                    List = new ArrayList<>(SDList);
-                    //System.out.println(List.size());
-                }
-                for (ScoreData S : SDList) {
-                    if (S.getTitle().equals(B50song.getTitle(DiffIndex)) && S.getDifficulty().equals(B50song.getDiff(DiffIndex))) {
-                        List.remove(S);
-                        Changed = true;
-                        B50jsonAdder(SD, List, Location);
-                        //System.out.println("수정");
+
+                boolean removed = false;
+                Iterator<ScoreData> iterator = SDList.iterator();
+                while (iterator.hasNext()) {
+                    ScoreData S = iterator.next();
+                    if (S.getTitle() != null && S.getDifficulty() != null
+                            && S.getTitle().equals(song.getTitle(DiffIndex))
+                            && S.getDifficulty().equals(song.getDiff(DiffIndex))) {
+                        iterator.remove();
+                        removed = true;
+                        System.out.println("수정");
+                        break; // 1건만 교체하는 게 맞을 때 유지
                     }
-                    //System.out.println(S.getTitle() + " " + S.getDifficulty() + " " + S.getLevel() + " | " + S.getScore() + " " + S.getPotential());
                 }
-                if (Changed == false) {
-                    B50jsonAdder(SD, List, Location);
+
+                if (!removed) {
+                    System.out.println("신규 추가");
                 }
+
+                B50jsonAdder(SD, SDList, Location);
+            } catch (Exception IOE) {
+                System.out.println("수정 실패");
             }
-            catch (IOException IOE) {}
-        }
-        else if (Location.exists() && Location.length() == 0) {
-            //System.out.println("json 파일이 비어 있음");
+        } else if (Location.exists() && Location.length() == 0) {
             B50jsonStarter(SD);
-        }
-        else if (!Location.exists()) {
-            //System.out.println("파일이 존재하지 않음");
+        } else if (!Location.exists()) {
             B50jsonMaker(Location);
             B50jsonStarter(SD);
         }
     }
 
-    public void B50jsonRemover(List<ScoreData> List, File Location, int DiffIndex) {
+    public void B50jsonRemover(Songs song, List<ScoreData> List, File Location, int DiffIndex) {
         boolean Changed = false;
         if (Location.exists() && Location.length() > 0) {
             try (FileReader reader = new FileReader(Location)) {
@@ -1953,7 +2616,7 @@ public class APC extends Application {
                     //System.out.println(List.size());
                 }
                 for (ScoreData S : SDList) {
-                    if (S.getTitle().equals(B50song.getTitle(DiffIndex)) && S.getDifficulty().equals(B50song.getDiff(DiffIndex))) {
+                    if (S.getTitle().equals(song.getTitle(DiffIndex)) && S.getDifficulty().equals(song.getDiff(DiffIndex))) {
                         List.remove(S);
                         Changed = true;
                         try (FileWriter writer = new FileWriter(Location)) {
@@ -2005,57 +2668,129 @@ public class APC extends Application {
         B50InputPane1.setHgap(10);
         B50InputPane1.setVgap(10);
 
-        CheckMenuItem B50SelPMPSTA = new CheckMenuItem("Pure Memory");
-        CheckMenuItem B50SelPMPRSA = new CheckMenuItem("Pure Memory");
-        CheckMenuItem B50SelPMFTRA = new CheckMenuItem("Pure Memory");
-        CheckMenuItem B50SelPMPSTB = new CheckMenuItem("Pure Memory");
-        CheckMenuItem B50SelPMPRSB = new CheckMenuItem("Pure Memory");
-        CheckMenuItem B50SelPMFTRB = new CheckMenuItem("Pure Memory");
-        CheckMenuItem B50SelPMPSTC = new CheckMenuItem("Pure Memory");
-        CheckMenuItem B50SelPMPRSC = new CheckMenuItem("Pure Memory");
-        CheckMenuItem B50SelPMFTRC = new CheckMenuItem("Pure Memory");
-        CheckMenuItem B50SelPMETR = new CheckMenuItem("Pure Memory");
-        CheckMenuItem B50SelPMBYD = new CheckMenuItem("Pure Memory");
-        CheckMenuItem B50SelPMLast = new CheckMenuItem("Pure Memory");
+        RadioMenuItem B50SelPMPSTA = new RadioMenuItem("Pure Memory");
+        RadioMenuItem B50SelPMPRSA = new RadioMenuItem("Pure Memory");
+        RadioMenuItem B50SelPMFTRA = new RadioMenuItem("Pure Memory");
+        RadioMenuItem B50SelPMPSTB = new RadioMenuItem("Pure Memory");
+        RadioMenuItem B50SelPMPRSB = new RadioMenuItem("Pure Memory");
+        RadioMenuItem B50SelPMFTRB = new RadioMenuItem("Pure Memory");
+        RadioMenuItem B50SelPMPSTC = new RadioMenuItem("Pure Memory");
+        RadioMenuItem B50SelPMPRSC = new RadioMenuItem("Pure Memory");
+        RadioMenuItem B50SelPMFTRC = new RadioMenuItem("Pure Memory");
+        RadioMenuItem B50SelPMETR = new RadioMenuItem("Pure Memory");
+        RadioMenuItem B50SelPMBYD = new RadioMenuItem("Pure Memory");
+        RadioMenuItem B50SelPMLast = new RadioMenuItem("Pure Memory");
 
-        CheckMenuItem B50SelFRPSTA = new CheckMenuItem("Full Recall");
-        CheckMenuItem B50SelFRPRSA = new CheckMenuItem("Full Recall");
-        CheckMenuItem B50SelFRFTRA = new CheckMenuItem("Full Recall");
-        CheckMenuItem B50SelFRPSTB = new CheckMenuItem("Full Recall");
-        CheckMenuItem B50SelFRPRSB = new CheckMenuItem("Full Recall");
-        CheckMenuItem B50SelFRFTRB = new CheckMenuItem("Full Recall");
-        CheckMenuItem B50SelFRPSTC = new CheckMenuItem("Full Recall");
-        CheckMenuItem B50SelFRPRSC = new CheckMenuItem("Full Recall");
-        CheckMenuItem B50SelFRFTRC = new CheckMenuItem("Full Recall");
-        CheckMenuItem B50SelFRETR = new CheckMenuItem("Full Recall");
-        CheckMenuItem B50SelFRBYD = new CheckMenuItem("Full Recall");
-        CheckMenuItem B50SelFRLast = new CheckMenuItem("Full Recall");
+        RadioMenuItem B50SelFRPSTA = new RadioMenuItem("Full Recall");
+        RadioMenuItem B50SelFRPRSA = new RadioMenuItem("Full Recall");
+        RadioMenuItem B50SelFRFTRA = new RadioMenuItem("Full Recall");
+        RadioMenuItem B50SelFRPSTB = new RadioMenuItem("Full Recall");
+        RadioMenuItem B50SelFRPRSB = new RadioMenuItem("Full Recall");
+        RadioMenuItem B50SelFRFTRB = new RadioMenuItem("Full Recall");
+        RadioMenuItem B50SelFRPSTC = new RadioMenuItem("Full Recall");
+        RadioMenuItem B50SelFRPRSC = new RadioMenuItem("Full Recall");
+        RadioMenuItem B50SelFRFTRC = new RadioMenuItem("Full Recall");
+        RadioMenuItem B50SelFRETR = new RadioMenuItem("Full Recall");
+        RadioMenuItem B50SelFRBYD = new RadioMenuItem("Full Recall");
+        RadioMenuItem B50SelFRLast = new RadioMenuItem("Full Recall");
 
-        CheckMenuItem B50SelTCPSTA = new CheckMenuItem("Track Complete");
-        CheckMenuItem B50SelTCPRSA = new CheckMenuItem("Track Complete");
-        CheckMenuItem B50SelTCFTRA = new CheckMenuItem("Track Complete");
-        CheckMenuItem B50SelTCPSTB = new CheckMenuItem("Track Complete");
-        CheckMenuItem B50SelTCPRSB = new CheckMenuItem("Track Complete");
-        CheckMenuItem B50SelTCFTRB = new CheckMenuItem("Track Complete");
-        CheckMenuItem B50SelTCPSTC = new CheckMenuItem("Track Complete");
-        CheckMenuItem B50SelTCPRSC = new CheckMenuItem("Track Complete");
-        CheckMenuItem B50SelTCFTRC = new CheckMenuItem("Track Complete");
-        CheckMenuItem B50SelTCETR = new CheckMenuItem("Track Complete");
-        CheckMenuItem B50SelTCBYD = new CheckMenuItem("Track Complete");
-        CheckMenuItem B50SelTCLast = new CheckMenuItem("Track Complete");
+        RadioMenuItem B50SelTCPSTA = new RadioMenuItem("Track Complete");
+        RadioMenuItem B50SelTCPRSA = new RadioMenuItem("Track Complete");
+        RadioMenuItem B50SelTCFTRA = new RadioMenuItem("Track Complete");
+        RadioMenuItem B50SelTCPSTB = new RadioMenuItem("Track Complete");
+        RadioMenuItem B50SelTCPRSB = new RadioMenuItem("Track Complete");
+        RadioMenuItem B50SelTCFTRB = new RadioMenuItem("Track Complete");
+        RadioMenuItem B50SelTCPSTC = new RadioMenuItem("Track Complete");
+        RadioMenuItem B50SelTCPRSC = new RadioMenuItem("Track Complete");
+        RadioMenuItem B50SelTCFTRC = new RadioMenuItem("Track Complete");
+        RadioMenuItem B50SelTCETR = new RadioMenuItem("Track Complete");
+        RadioMenuItem B50SelTCBYD = new RadioMenuItem("Track Complete");
+        RadioMenuItem B50SelTCLast = new RadioMenuItem("Track Complete");
 
-        CheckMenuItem B50SelTLPSTA = new CheckMenuItem("Track Lost");
-        CheckMenuItem B50SelTLPRSA = new CheckMenuItem("Track Lost");
-        CheckMenuItem B50SelTLFTRA = new CheckMenuItem("Track Lost");
-        CheckMenuItem B50SelTLPSTB = new CheckMenuItem("Track Lost");
-        CheckMenuItem B50SelTLPRSB = new CheckMenuItem("Track Lost");
-        CheckMenuItem B50SelTLFTRB = new CheckMenuItem("Track Lost");
-        CheckMenuItem B50SelTLPSTC = new CheckMenuItem("Track Lost");
-        CheckMenuItem B50SelTLPRSC = new CheckMenuItem("Track Lost");
-        CheckMenuItem B50SelTLFTRC = new CheckMenuItem("Track Lost");
-        CheckMenuItem B50SelTLETR = new CheckMenuItem("Track Lost");
-        CheckMenuItem B50SelTLBYD = new CheckMenuItem("Track Lost");
-        CheckMenuItem B50SelTLLast = new CheckMenuItem("Track Lost");
+        RadioMenuItem B50SelTLPSTA = new RadioMenuItem("Track Lost");
+        RadioMenuItem B50SelTLPRSA = new RadioMenuItem("Track Lost");
+        RadioMenuItem B50SelTLFTRA = new RadioMenuItem("Track Lost");
+        RadioMenuItem B50SelTLPSTB = new RadioMenuItem("Track Lost");
+        RadioMenuItem B50SelTLPRSB = new RadioMenuItem("Track Lost");
+        RadioMenuItem B50SelTLFTRB = new RadioMenuItem("Track Lost");
+        RadioMenuItem B50SelTLPSTC = new RadioMenuItem("Track Lost");
+        RadioMenuItem B50SelTLPRSC = new RadioMenuItem("Track Lost");
+        RadioMenuItem B50SelTLFTRC = new RadioMenuItem("Track Lost");
+        RadioMenuItem B50SelTLETR = new RadioMenuItem("Track Lost");
+        RadioMenuItem B50SelTLBYD = new RadioMenuItem("Track Lost");
+        RadioMenuItem B50SelTLLast = new RadioMenuItem("Track Lost");
+
+        ToggleGroup B50PSTATG = new ToggleGroup();
+        B50SelPMPSTA.setToggleGroup(B50PSTATG);
+        B50SelFRPSTA.setToggleGroup(B50PSTATG);
+        B50SelTCPSTA.setToggleGroup(B50PSTATG);
+        B50SelTLPSTA.setToggleGroup(B50PSTATG);
+
+        ToggleGroup B50PSTBTG = new ToggleGroup();
+        B50SelPMPSTB.setToggleGroup(B50PSTBTG);
+        B50SelFRPSTB.setToggleGroup(B50PSTBTG);
+        B50SelTCPSTB.setToggleGroup(B50PSTBTG);
+        B50SelTLPSTB.setToggleGroup(B50PSTBTG);
+
+        ToggleGroup B50PSTCTG = new ToggleGroup();
+        B50SelPMPSTC.setToggleGroup(B50PSTCTG);
+        B50SelFRPSTC.setToggleGroup(B50PSTCTG);
+        B50SelTCPSTC.setToggleGroup(B50PSTCTG);
+        B50SelTLPSTC.setToggleGroup(B50PSTCTG);
+
+        ToggleGroup B50PRSATG = new ToggleGroup();
+        B50SelPMPRSA.setToggleGroup(B50PRSATG);
+        B50SelFRPRSA.setToggleGroup(B50PRSATG);
+        B50SelTCPRSA.setToggleGroup(B50PRSATG);
+        B50SelTLPRSA.setToggleGroup(B50PRSATG);
+        
+        ToggleGroup B50PRSBTG = new ToggleGroup();
+        B50SelPMPRSB.setToggleGroup(B50PRSBTG);
+        B50SelFRPRSB.setToggleGroup(B50PRSBTG);
+        B50SelTCPRSB.setToggleGroup(B50PRSBTG);
+        B50SelTLPRSB.setToggleGroup(B50PRSBTG);
+
+        ToggleGroup B50PRSCTG = new ToggleGroup();
+        B50SelPMPRSC.setToggleGroup(B50PRSCTG);
+        B50SelFRPRSC.setToggleGroup(B50PRSCTG);
+        B50SelTCPRSC.setToggleGroup(B50PRSCTG);
+        B50SelTLPRSC.setToggleGroup(B50PRSCTG);
+
+        ToggleGroup B50FTRATG = new ToggleGroup();
+        B50SelPMFTRA.setToggleGroup(B50FTRATG);
+        B50SelFRFTRA.setToggleGroup(B50FTRATG);
+        B50SelTCFTRA.setToggleGroup(B50FTRATG);
+        B50SelTLFTRA.setToggleGroup(B50FTRATG);
+
+        ToggleGroup B50FTRBTG = new ToggleGroup();
+        B50SelPMFTRB.setToggleGroup(B50FTRBTG);
+        B50SelFRFTRB.setToggleGroup(B50FTRBTG);
+        B50SelTCFTRB.setToggleGroup(B50FTRBTG);
+        B50SelTLFTRB.setToggleGroup(B50FTRBTG);
+
+        ToggleGroup B50FTRCTG = new ToggleGroup();
+        B50SelPMFTRC.setToggleGroup(B50FTRCTG);
+        B50SelFRFTRC.setToggleGroup(B50FTRCTG);
+        B50SelTCFTRC.setToggleGroup(B50FTRCTG);
+        B50SelTLFTRC.setToggleGroup(B50FTRCTG);
+
+        ToggleGroup B50ETRTG = new ToggleGroup();
+        B50SelPMETR.setToggleGroup(B50ETRTG);
+        B50SelFRETR.setToggleGroup(B50ETRTG);
+        B50SelTCETR.setToggleGroup(B50ETRTG);
+        B50SelTLETR.setToggleGroup(B50ETRTG);
+
+        ToggleGroup B50BYDTG = new ToggleGroup();
+        B50SelPMBYD.setToggleGroup(B50BYDTG);
+        B50SelFRBYD.setToggleGroup(B50BYDTG);
+        B50SelTCBYD.setToggleGroup(B50BYDTG);
+        B50SelTLBYD.setToggleGroup(B50BYDTG);
+
+        ToggleGroup B50LastTG = new ToggleGroup();
+        B50SelPMLast.setToggleGroup(B50LastTG);
+        B50SelFRLast.setToggleGroup(B50LastTG);
+        B50SelTCLast.setToggleGroup(B50LastTG);
+        B50SelTLLast.setToggleGroup(B50LastTG);
         
         TextField ScoreMatchPST_A = new TextField();
         TextField ScoreMatchPST_B = new TextField();
@@ -2088,17 +2823,14 @@ public class APC extends Application {
         ClearCheckPST_A.getItems().clear();
         ClearCheckPST_A.getItems().addAll(B50SelPMPSTA, B50SelFRPSTA, B50SelTCPSTA, B50SelTLPSTA);
         ClearCheckPST_A.setPrefWidth(CCWidth);
-        B50SelTCPSTA.setSelected(true);
         MenuButton ClearCheckPST_B = new MenuButton();
         ClearCheckPST_B.getItems().clear();
         ClearCheckPST_B.getItems().addAll(B50SelPMPSTB, B50SelFRPSTB, B50SelTCPSTB, B50SelTLPSTB);
         ClearCheckPST_B.setPrefWidth(CCWidth);
-        B50SelTCPSTB.setSelected(true);
         MenuButton ClearCheckPST_C = new MenuButton();
         ClearCheckPST_C.getItems().clear();
         ClearCheckPST_C.getItems().addAll(B50SelPMPSTC, B50SelFRPSTC, B50SelTCPSTC, B50SelTLPSTC);
         ClearCheckPST_C.setPrefWidth(CCWidth);
-        B50SelTCPSTC.setSelected(true);
         
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         
@@ -2106,17 +2838,14 @@ public class APC extends Application {
         ClearCheckPRS_A.getItems().clear();
         ClearCheckPRS_A.getItems().addAll(B50SelPMPRSA, B50SelFRPRSA, B50SelTCPRSA, B50SelTLPRSA);
         ClearCheckPRS_A.setPrefWidth(CCWidth);
-        B50SelTCPRSA.setSelected(true);
         MenuButton ClearCheckPRS_B = new MenuButton();
         ClearCheckPRS_B.getItems().clear();
         ClearCheckPRS_B.getItems().addAll(B50SelPMPRSB, B50SelFRPRSB, B50SelTCPRSB, B50SelTLPRSB);
         ClearCheckPRS_B.setPrefWidth(CCWidth);
-        B50SelTCPRSB.setSelected(true);
         MenuButton ClearCheckPRS_C = new MenuButton();
         ClearCheckPRS_C.getItems().clear();
         ClearCheckPRS_C.getItems().addAll(B50SelPMPRSC, B50SelFRPRSC, B50SelTCPRSC, B50SelTLPRSC);
         ClearCheckPRS_C.setPrefWidth(CCWidth);
-        B50SelTCPRSC.setSelected(true);
         
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         
@@ -2124,17 +2853,14 @@ public class APC extends Application {
         ClearCheckFTR_A.getItems().clear();
         ClearCheckFTR_A.getItems().addAll(B50SelPMFTRA, B50SelFRFTRA, B50SelTCFTRA, B50SelTLFTRA);
         ClearCheckFTR_A.setPrefWidth(CCWidth);
-        B50SelTCFTRA.setSelected(true);
         MenuButton ClearCheckFTR_B = new MenuButton();
         ClearCheckFTR_B.getItems().clear();
         ClearCheckFTR_B.getItems().addAll(B50SelPMFTRB, B50SelFRFTRB, B50SelTCFTRB, B50SelTLFTRB);
         ClearCheckFTR_B.setPrefWidth(CCWidth);
-        B50SelTCFTRB.setSelected(true);
         MenuButton ClearCheckFTR_C = new MenuButton();
         ClearCheckFTR_C.getItems().clear();
         ClearCheckFTR_C.getItems().addAll(B50SelPMFTRC, B50SelFRFTRC, B50SelTCFTRC, B50SelTLFTRC);
         ClearCheckFTR_C.setPrefWidth(CCWidth);
-        B50SelTCFTRC.setSelected(true);
         
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         
@@ -2142,7 +2868,6 @@ public class APC extends Application {
         ClearCheckETR.getItems().clear();
         ClearCheckETR.getItems().addAll(B50SelPMETR, B50SelFRETR, B50SelTCETR, B50SelTLETR);
         ClearCheckETR.setPrefWidth(CCWidth);
-        B50SelTCETR.setSelected(true);
         
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         
@@ -2150,7 +2875,6 @@ public class APC extends Application {
         ClearCheckBYD.getItems().clear();
         ClearCheckBYD.getItems().addAll(B50SelPMBYD, B50SelFRBYD, B50SelTCBYD, B50SelTLBYD);
         ClearCheckBYD.setPrefWidth(CCWidth);
-        B50SelTCBYD.setSelected(true);
         
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         
@@ -2158,7 +2882,6 @@ public class APC extends Application {
         ClearCheckLast.getItems().clear();
         ClearCheckLast.getItems().addAll(B50SelPMLast, B50SelFRLast, B50SelTCLast, B50SelTLLast);
         ClearCheckLast.setPrefWidth(CCWidth);
-        B50SelTCLast.setSelected(true);
         
         if (settings.get("PSTClearStatus", "Track Complete").equals("Pure Memory")) {
             settings.set("PSTClearStatus", "Pure Memory");
@@ -2178,7 +2901,7 @@ public class APC extends Application {
             B50SelTLPSTC.setSelected(false);
             ClearCheckPST_C.setText("P");
         }
-        if (settings.get("PSTClearStatus", "Track Complete").equals("Full Recall")) {
+        else if (settings.get("PSTClearStatus", "Track Complete").equals("Full Recall")) {
             settings.set("PSTClearStatus", "Full Recall");
             B50SelPMPSTA.setSelected(false);
             B50SelFRPSTA.setSelected(true);
@@ -2196,7 +2919,7 @@ public class APC extends Application {
             B50SelTLPSTC.setSelected(false);
             ClearCheckPST_C.setText("F");
         }
-        if (settings.get("PSTClearStatus", "Track Complete").equals("Track Complete")) {
+        else if (settings.get("PSTClearStatus", "Track Complete").equals("Track Complete")) {
             settings.set("PSTClearStatus", "Track Complete");
             B50SelPMPSTA.setSelected(false);
             B50SelFRPSTA.setSelected(false);
@@ -2214,7 +2937,7 @@ public class APC extends Application {
             B50SelTLPSTC.setSelected(false);
             ClearCheckPST_C.setText("C");
         }
-        if (settings.get("PSTClearStatus", "Track Complete").equals("Track Lost")) {
+        else if (settings.get("PSTClearStatus", "Track Complete").equals("Track Lost")) {
             settings.set("PSTClearStatus", "Track Lost");
             B50SelPMPSTA.setSelected(false);
             B50SelFRPSTA.setSelected(false);
@@ -2251,7 +2974,7 @@ public class APC extends Application {
             B50SelTLPRSC.setSelected(false);
             ClearCheckPRS_C.setText("P");
         }
-        if (settings.get("PRSClearStatus", "Track Complete").equals("Full Recall")) {
+        else if (settings.get("PRSClearStatus", "Track Complete").equals("Full Recall")) {
             settings.set("PRSClearStatus", "Full Recall");
             B50SelPMPRSA.setSelected(false);
             B50SelFRPRSA.setSelected(true);
@@ -2269,7 +2992,7 @@ public class APC extends Application {
             B50SelTLPRSC.setSelected(false);
             ClearCheckPRS_C.setText("F");
         }
-        if (settings.get("PRSClearStatus", "Track Complete").equals("Track Complete")) {
+        else if (settings.get("PRSClearStatus", "Track Complete").equals("Track Complete")) {
             settings.set("PRSClearStatus", "Track Complete");
             B50SelPMPRSA.setSelected(false);
             B50SelFRPRSA.setSelected(false);
@@ -2287,7 +3010,7 @@ public class APC extends Application {
             B50SelTLPRSC.setSelected(false);
             ClearCheckPRS_C.setText("C");
         }
-        if (settings.get("PRSClearStatus", "Track Complete").equals("Track Lost")) {
+        else if (settings.get("PRSClearStatus", "Track Complete").equals("Track Lost")) {
             settings.set("PRSClearStatus", "Track Lost");
             B50SelPMPRSA.setSelected(false);
             B50SelFRPRSA.setSelected(false);
@@ -2324,7 +3047,7 @@ public class APC extends Application {
             B50SelTLFTRC.setSelected(false);
             ClearCheckFTR_C.setText("P");
         }
-        if (settings.get("FTRClearStatus", "Track Complete").equals("Full Recall")) {
+        else if (settings.get("FTRClearStatus", "Track Complete").equals("Full Recall")) {
             settings.set("FTRClearStatus", "Full Recall");
             B50SelPMFTRA.setSelected(false);
             B50SelFRFTRA.setSelected(true);
@@ -2342,7 +3065,7 @@ public class APC extends Application {
             B50SelTLFTRC.setSelected(false);
             ClearCheckFTR_C.setText("F");
         }
-        if (settings.get("FTRClearStatus", "Track Complete").equals("Track Complete")) {
+        else if (settings.get("FTRClearStatus", "Track Complete").equals("Track Complete")) {
             settings.set("FTRClearStatus", "Track Complete");
             B50SelPMFTRA.setSelected(false);
             B50SelFRFTRA.setSelected(false);
@@ -2360,7 +3083,7 @@ public class APC extends Application {
             B50SelTLFTRC.setSelected(false);
             ClearCheckFTR_C.setText("C");
         }
-        if (settings.get("FTRClearStatus", "Track Complete").equals("Track Lost")) {
+        else if (settings.get("FTRClearStatus", "Track Complete").equals("Track Lost")) {
             settings.set("FTRClearStatus", "Track Lost");
             B50SelPMFTRA.setSelected(false);
             B50SelFRFTRA.setSelected(false);
@@ -2387,7 +3110,7 @@ public class APC extends Application {
             B50SelTLETR.setSelected(false);
             ClearCheckETR.setText("P");
         }
-        if (settings.get("ETRClearStatus", "Track Complete").equals("Full Recall")) {
+        else if (settings.get("ETRClearStatus", "Track Complete").equals("Full Recall")) {
             settings.set("ETRClearStatus", "Full Recall");
             B50SelPMETR.setSelected(false);
             B50SelFRETR.setSelected(true);
@@ -2395,7 +3118,7 @@ public class APC extends Application {
             B50SelTLETR.setSelected(false);
             ClearCheckETR.setText("F");
         }
-        if (settings.get("ETRClearStatus", "Track Complete").equals("Track Complete")) {
+        else if (settings.get("ETRClearStatus", "Track Complete").equals("Track Complete")) {
             settings.set("ETRClearStatus", "Track Complete");
             B50SelPMETR.setSelected(false);
             B50SelFRETR.setSelected(false);
@@ -2403,7 +3126,7 @@ public class APC extends Application {
             B50SelTLETR.setSelected(false);
             ClearCheckETR.setText("C");
         }
-        if (settings.get("ETRClearStatus", "Track Complete").equals("Track Lost")) {
+        else if (settings.get("ETRClearStatus", "Track Complete").equals("Track Lost")) {
             settings.set("ETRClearStatus", "Track Lost");
             B50SelPMETR.setSelected(false);
             B50SelFRETR.setSelected(false);
@@ -2425,7 +3148,7 @@ public class APC extends Application {
             B50SelTLLast.setSelected(false);
             ClearCheckLast.setText("P");
         }
-        if (settings.get("BYDClearStatus", "Track Complete").equals("Full Recall")) {
+        else if (settings.get("BYDClearStatus", "Track Complete").equals("Full Recall")) {
             settings.set("BYDClearStatus", "Full Recall");
             B50SelPMBYD.setSelected(false);
             B50SelFRBYD.setSelected(true);
@@ -2438,7 +3161,7 @@ public class APC extends Application {
             B50SelTLLast.setSelected(false);
             ClearCheckLast.setText("F");
         }
-        if (settings.get("BYDClearStatus", "Track Complete").equals("Track Complete")) {
+        else if (settings.get("BYDClearStatus", "Track Complete").equals("Track Complete")) {
             settings.set("BYDClearStatus", "Track Complete");
             B50SelPMBYD.setSelected(false);
             B50SelFRBYD.setSelected(false);
@@ -2451,7 +3174,7 @@ public class APC extends Application {
             B50SelTLLast.setSelected(false);
             ClearCheckLast.setText("C");
         }
-        if (settings.get("BYDClearStatus", "Track Complete").equals("Track Lost")) {
+        else if (settings.get("BYDClearStatus", "Track Complete").equals("Track Lost")) {
             settings.set("BYDClearStatus", "Track Lost");
             B50SelPMBYD.setSelected(false);
             B50SelFRBYD.setSelected(false);
@@ -2956,7 +3679,7 @@ public class APC extends Application {
                     throw new IndexOutOfBoundsException();
                 }
                 double Potential = APCLogic.APCLogic_B50(B50song.getConst(0), Score, isCleared);
-                B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(0), B50song.getTitle(0), B50song.getDiff(0), B50song.getLevel(0), B50song.getArtist(0), Score, ClearStatus, Potential), B50Location, 0);
+                B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(0), B50song.getTitle(0), B50song.getDiff(0), B50song.getLevel(0), B50song.getArtist(0), Score, ClearStatus, Potential), B50Location, 0);
             }
             catch (NumberFormatException NFE) {
                 //System.out.println("String to Integer 파싱 실패");
@@ -2971,7 +3694,7 @@ public class APC extends Application {
         DeleteButtonPST_A.getStyleClass().add("Buttons");
         DeleteButtonPST_A.setOnAction(PSDA -> {
             List<ScoreData> B50List = new ArrayList<ScoreData>();
-            B50jsonRemover(B50List, B50Location, 0);
+            B50jsonRemover(B50song, B50List, B50Location, 0);
             ScoreMatchPST_A.clear();
             if (settings.get("PSTClearStatus", "Track Complete").equals("Pure Memory")) {
             settings.set("PSTClearStatus", "Pure Memory");
@@ -2981,7 +3704,7 @@ public class APC extends Application {
                 B50SelTLPSTA.setSelected(false);
                 ClearCheckPST_A.setText("P");
             }
-            if (settings.get("PSTClearStatus", "Track Complete").equals("Full Recall")) {
+            else if (settings.get("PSTClearStatus", "Track Complete").equals("Full Recall")) {
                 settings.set("PSTClearStatus", "Full Recall");
                 B50SelPMPSTA.setSelected(false);
                 B50SelFRPSTA.setSelected(true);
@@ -2989,7 +3712,7 @@ public class APC extends Application {
                 B50SelTLPSTA.setSelected(false);
                 ClearCheckPST_A.setText("F");
             }
-            if (settings.get("PSTClearStatus", "Track Complete").equals("Track Complete")) {
+            else if (settings.get("PSTClearStatus", "Track Complete").equals("Track Complete")) {
                 settings.set("PSTClearStatus", "Track Complete");
                 B50SelPMPSTA.setSelected(false);
                 B50SelFRPSTA.setSelected(false);
@@ -2997,7 +3720,7 @@ public class APC extends Application {
                 B50SelTLPSTA.setSelected(false);
                 ClearCheckPST_A.setText("C");
             }
-            if (settings.get("PSTClearStatus", "Track Complete").equals("Track Lost")) {
+            else if (settings.get("PSTClearStatus", "Track Complete").equals("Track Lost")) {
                 settings.set("PSTClearStatus", "Track Lost");
                 B50SelPMPSTA.setSelected(false);
                 B50SelFRPSTA.setSelected(false);
@@ -3035,7 +3758,7 @@ public class APC extends Application {
                     throw new IndexOutOfBoundsException();
                 }
                 double Potential = APCLogic.APCLogic_B50(B50song.getConst(0), Score, isCleared);
-                B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(0), B50song.getTitle(0), B50song.getDiff(0), B50song.getLevel(0), B50song.getArtist(0), Score, ClearStatus, Potential), B50Location, 0);
+                B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(0), B50song.getTitle(0), B50song.getDiff(0), B50song.getLevel(0), B50song.getArtist(0), Score, ClearStatus, Potential), B50Location, 0);
             }
             catch (NumberFormatException NFE) {
                 //System.out.println("String to Integer 파싱 실패");
@@ -3050,7 +3773,7 @@ public class APC extends Application {
         DeleteButtonPST_B.getStyleClass().add("Buttons");
         DeleteButtonPST_B.setOnAction(PSDB -> {
             List<ScoreData> B50List = new ArrayList<ScoreData>();
-            B50jsonRemover(B50List, B50Location, 0);
+            B50jsonRemover(B50song, B50List, B50Location, 0);
             ScoreMatchPST_B.clear();
             if (settings.get("PSTClearStatus", "Track Complete").equals("Pure Memory")) {
                 settings.set("PSTClearStatus", "Pure Memory");
@@ -3060,7 +3783,7 @@ public class APC extends Application {
                 B50SelTLPSTB.setSelected(false);
                 ClearCheckPST_B.setText("P");
             }
-            if (settings.get("PSTClearStatus", "Track Complete").equals("Full Recall")) {
+            else if (settings.get("PSTClearStatus", "Track Complete").equals("Full Recall")) {
                 settings.set("PSTClearStatus", "Full Recall");
                 B50SelPMPSTB.setSelected(false);
                 B50SelFRPSTB.setSelected(true);
@@ -3068,7 +3791,7 @@ public class APC extends Application {
                 B50SelTLPSTB.setSelected(false);
                 ClearCheckPST_B.setText("F");
             }
-            if (settings.get("PSTClearStatus", "Track Complete").equals("Track Complete")) {
+            else if (settings.get("PSTClearStatus", "Track Complete").equals("Track Complete")) {
                 settings.set("PSTClearStatus", "Track Complete");
                 B50SelPMPSTB.setSelected(false);
                 B50SelFRPSTB.setSelected(false);
@@ -3076,7 +3799,7 @@ public class APC extends Application {
                 B50SelTLPSTB.setSelected(false);
                 ClearCheckPST_B.setText("C");
             }
-            if (settings.get("PSTClearStatus", "Track Complete").equals("Track Lost")) {
+            else if (settings.get("PSTClearStatus", "Track Complete").equals("Track Lost")) {
                 settings.set("PSTClearStatus", "Track Lost");
                 B50SelPMPSTB.setSelected(false);
                 B50SelFRPSTB.setSelected(false);
@@ -3114,7 +3837,7 @@ public class APC extends Application {
                     throw new IndexOutOfBoundsException();
                 }
                 double Potential = APCLogic.APCLogic_B50(B50song.getConst(0), Score, isCleared);
-                B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(0), B50song.getTitle(0), B50song.getDiff(0), B50song.getLevel(0), B50song.getArtist(0), Score, ClearStatus, Potential), B50Location, 0);
+                B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(0), B50song.getTitle(0), B50song.getDiff(0), B50song.getLevel(0), B50song.getArtist(0), Score, ClearStatus, Potential), B50Location, 0);
             }
             catch (NumberFormatException NFE) {
                 //System.out.println("String to Integer 파싱 실패");
@@ -3129,7 +3852,7 @@ public class APC extends Application {
         DeleteButtonPST_C.getStyleClass().add("Buttons");
         DeleteButtonPST_C.setOnAction(PSDC -> {
             List<ScoreData> B50List = new ArrayList<ScoreData>();
-            B50jsonRemover(B50List, B50Location, 0);
+            B50jsonRemover(B50song, B50List, B50Location, 0);
             ScoreMatchPST_C.clear();
             if (settings.get("PSTClearStatus", "Track Complete").equals("Pure Memory")) {
                 settings.set("PSTClearStatus", "Pure Memory");
@@ -3139,7 +3862,7 @@ public class APC extends Application {
                 B50SelTLPSTC.setSelected(false);
                 ClearCheckPST_C.setText("P");
             }
-            if (settings.get("PSTClearStatus", "Track Complete").equals("Full Recall")) {
+            else if (settings.get("PSTClearStatus", "Track Complete").equals("Full Recall")) {
                 settings.set("PSTClearStatus", "Full Recall");
                 B50SelPMPSTC.setSelected(false);
                 B50SelFRPSTC.setSelected(true);
@@ -3147,7 +3870,7 @@ public class APC extends Application {
                 B50SelTLPSTC.setSelected(false);
                 ClearCheckPST_C.setText("F");
             }
-            if (settings.get("PSTClearStatus", "Track Complete").equals("Track Complete")) {
+            else if (settings.get("PSTClearStatus", "Track Complete").equals("Track Complete")) {
                 settings.set("PSTClearStatus", "Track Complete");
                 B50SelPMPSTC.setSelected(false);
                 B50SelFRPSTC.setSelected(false);
@@ -3155,7 +3878,7 @@ public class APC extends Application {
                 B50SelTLPSTC.setSelected(false);
                 ClearCheckPST_C.setText("C");
             }
-            if (settings.get("PSTClearStatus", "Track Complete").equals("Track Lost")) {
+            else if (settings.get("PSTClearStatus", "Track Complete").equals("Track Lost")) {
                 settings.set("PSTClearStatus", "Track Lost");
                 B50SelPMPSTC.setSelected(false);
                 B50SelFRPSTC.setSelected(false);
@@ -3194,7 +3917,7 @@ public class APC extends Application {
                     throw new IndexOutOfBoundsException();
                 }
                 double Potential = APCLogic.APCLogic_B50(B50song.getConst(1), Score, isCleared);
-                B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(1), B50song.getTitle(1), B50song.getDiff(1), B50song.getLevel(1), B50song.getArtist(1), Score, ClearStatus, Potential), B50Location, 1);
+                B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(1), B50song.getTitle(1), B50song.getDiff(1), B50song.getLevel(1), B50song.getArtist(1), Score, ClearStatus, Potential), B50Location, 1);
             }
             catch (NumberFormatException NFE) {
                 //System.out.println("String to Integer 파싱 실패");
@@ -3209,7 +3932,7 @@ public class APC extends Application {
         DeleteButtonPRS_A.getStyleClass().add("Buttons");
         DeleteButtonPRS_A.setOnAction(PSD -> {
             List<ScoreData> B50List = new ArrayList<ScoreData>();
-            B50jsonRemover(B50List, B50Location, 1);
+            B50jsonRemover(B50song, B50List, B50Location, 1);
             ScoreMatchPRS_A.clear();
             if (settings.get("PRSClearStatus", "Track Complete").equals("Pure Memory")) {
                 settings.set("PRSClearStatus", "Pure Memory");
@@ -3219,7 +3942,7 @@ public class APC extends Application {
                 B50SelTLPRSA.setSelected(false);
                 ClearCheckPRS_A.setText("P");
             }
-            if (settings.get("PRSClearStatus", "Track Complete").equals("Full Recall")) {
+            else if (settings.get("PRSClearStatus", "Track Complete").equals("Full Recall")) {
                 settings.set("PRSClearStatus", "Full Recall");
                 B50SelPMPRSA.setSelected(false);
                 B50SelFRPRSA.setSelected(true);
@@ -3227,7 +3950,7 @@ public class APC extends Application {
                 B50SelTLPRSA.setSelected(false);
                 ClearCheckPRS_A.setText("F");
             }
-            if (settings.get("PRSClearStatus", "Track Complete").equals("Track Complete")) {
+            else if (settings.get("PRSClearStatus", "Track Complete").equals("Track Complete")) {
                 settings.set("PRSClearStatus", "Track Complete");
                 B50SelPMPRSA.setSelected(false);
                 B50SelFRPRSA.setSelected(false);
@@ -3235,7 +3958,7 @@ public class APC extends Application {
                 B50SelTLPRSA.setSelected(false);
                 ClearCheckPRS_A.setText("C");
             }
-            if (settings.get("PRSClearStatus", "Track Complete").equals("Track Lost")) {
+            else if (settings.get("PRSClearStatus", "Track Complete").equals("Track Lost")) {
                 settings.set("PRSClearStatus", "Track Lost");
                 B50SelPMPRSA.setSelected(false);
                 B50SelFRPRSA.setSelected(false);
@@ -3273,7 +3996,7 @@ public class APC extends Application {
                     throw new IndexOutOfBoundsException();
                 }
                 double Potential = APCLogic.APCLogic_B50(B50song.getConst(1), Score, isCleared);
-                B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(1), B50song.getTitle(1), B50song.getDiff(1), B50song.getLevel(1), B50song.getArtist(1), Score, ClearStatus, Potential), B50Location, 1);
+                B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(1), B50song.getTitle(1), B50song.getDiff(1), B50song.getLevel(1), B50song.getArtist(1), Score, ClearStatus, Potential), B50Location, 1);
             }
             catch (NumberFormatException NFE) {
                 //System.out.println("String to Integer 파싱 실패");
@@ -3288,7 +4011,7 @@ public class APC extends Application {
         DeleteButtonPRS_B.getStyleClass().add("Buttons");
         DeleteButtonPRS_B.setOnAction(PSD -> {
             List<ScoreData> B50List = new ArrayList<ScoreData>();
-            B50jsonRemover(B50List, B50Location, 1);
+            B50jsonRemover(B50song, B50List, B50Location, 1);
             ScoreMatchPRS_B.clear();
             if (settings.get("PRSClearStatus", "Track Complete").equals("Pure Memory")) {
                 settings.set("PRSClearStatus", "Pure Memory");
@@ -3298,7 +4021,7 @@ public class APC extends Application {
                 B50SelTLPRSB.setSelected(false);
                 ClearCheckPRS_B.setText("P");
             }
-            if (settings.get("PRSClearStatus", "Track Complete").equals("Full Recall")) {
+            else if (settings.get("PRSClearStatus", "Track Complete").equals("Full Recall")) {
                 settings.set("PRSClearStatus", "Full Recall");
                 B50SelPMPRSB.setSelected(false);
                 B50SelFRPRSB.setSelected(true);
@@ -3306,7 +4029,7 @@ public class APC extends Application {
                 B50SelTLPRSB.setSelected(false);
                 ClearCheckPRS_B.setText("F");
             }
-            if (settings.get("PRSClearStatus", "Track Complete").equals("Track Complete")) {
+            else if (settings.get("PRSClearStatus", "Track Complete").equals("Track Complete")) {
                 settings.set("PRSClearStatus", "Track Complete");
                 B50SelPMPRSB.setSelected(false);
                 B50SelFRPRSB.setSelected(false);
@@ -3314,7 +4037,7 @@ public class APC extends Application {
                 B50SelTLPRSB.setSelected(false);
                 ClearCheckPRS_B.setText("C");
             }
-            if (settings.get("PRSClearStatus", "Track Complete").equals("Track Lost")) {
+            else if (settings.get("PRSClearStatus", "Track Complete").equals("Track Lost")) {
                 settings.set("PRSClearStatus", "Track Lost");
                 B50SelPMPRSB.setSelected(false);
                 B50SelFRPRSB.setSelected(false);
@@ -3352,7 +4075,7 @@ public class APC extends Application {
                     throw new IndexOutOfBoundsException();
                 }
                 double Potential = APCLogic.APCLogic_B50(B50song.getConst(1), Score, isCleared);
-                B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(1), B50song.getTitle(1), B50song.getDiff(1), B50song.getLevel(1), B50song.getArtist(1), Score, ClearStatus, Potential), B50Location, 1);
+                B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(1), B50song.getTitle(1), B50song.getDiff(1), B50song.getLevel(1), B50song.getArtist(1), Score, ClearStatus, Potential), B50Location, 1);
             }
             catch (NumberFormatException NFE) {
                 //System.out.println("String to Integer 파싱 실패");
@@ -3367,7 +4090,7 @@ public class APC extends Application {
         DeleteButtonPRS_C.getStyleClass().add("Buttons");
         DeleteButtonPRS_C.setOnAction(PSD -> {
             List<ScoreData> B50List = new ArrayList<ScoreData>();
-            B50jsonRemover(B50List, B50Location, 1);
+            B50jsonRemover(B50song, B50List, B50Location, 1);
             ScoreMatchPRS_C.clear();
             if (settings.get("PRSClearStatus", "Track Complete").equals("Pure Memory")) {
                 settings.set("PRSClearStatus", "Pure Memory");
@@ -3377,7 +4100,7 @@ public class APC extends Application {
                 B50SelTLPRSC.setSelected(false);
                 ClearCheckPRS_C.setText("P");
             }
-            if (settings.get("PRSClearStatus", "Track Complete").equals("Full Recall")) {
+            else if (settings.get("PRSClearStatus", "Track Complete").equals("Full Recall")) {
                 settings.set("PRSClearStatus", "Full Recall");
                 B50SelPMPRSC.setSelected(false);
                 B50SelFRPRSC.setSelected(true);
@@ -3385,7 +4108,7 @@ public class APC extends Application {
                 B50SelTLPRSC.setSelected(false);
                 ClearCheckPRS_C.setText("F");
             }
-            if (settings.get("PRSClearStatus", "Track Complete").equals("Track Complete")) {
+            else if (settings.get("PRSClearStatus", "Track Complete").equals("Track Complete")) {
                 settings.set("PRSClearStatus", "Track Complete");
                 B50SelPMPRSC.setSelected(false);
                 B50SelFRPRSC.setSelected(false);
@@ -3393,7 +4116,7 @@ public class APC extends Application {
                 B50SelTLPRSC.setSelected(false);
                 ClearCheckPRS_C.setText("C");
             }
-            if (settings.get("PRSClearStatus", "Track Complete").equals("Track Lost")) {
+            else if (settings.get("PRSClearStatus", "Track Complete").equals("Track Lost")) {
                 settings.set("PRSClearStatus", "Track Lost");
                 B50SelPMPRSC.setSelected(false);
                 B50SelFRPRSC.setSelected(false);
@@ -3432,7 +4155,7 @@ public class APC extends Application {
                     throw new IndexOutOfBoundsException();
                 }
                 double Potential = APCLogic.APCLogic_B50(B50song.getConst(2), Score, isCleared);
-                B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(2), B50song.getTitle(2), B50song.getDiff(2), B50song.getLevel(2), B50song.getArtist(2), Score, ClearStatus, Potential), B50Location, 2);
+                B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(2), B50song.getTitle(2), B50song.getDiff(2), B50song.getLevel(2), B50song.getArtist(2), Score, ClearStatus, Potential), B50Location, 2);
             }
             catch (NumberFormatException NFE) {
                 //System.out.println("String to Integer 파싱 실패");
@@ -3447,7 +4170,7 @@ public class APC extends Application {
         DeleteButtonFTR_A.getStyleClass().add("Buttons");
         DeleteButtonFTR_A.setOnAction(PSD -> {
             List<ScoreData> B50List = new ArrayList<ScoreData>();
-            B50jsonRemover(B50List, B50Location, 2);
+            B50jsonRemover(B50song, B50List, B50Location, 2);
             ScoreMatchFTR_A.clear();
             if (settings.get("FTRClearStatus", "Track Complete").equals("Pure Memory")) {
                 settings.set("FTRClearStatus", "Pure Memory");
@@ -3457,7 +4180,7 @@ public class APC extends Application {
                 B50SelTLFTRA.setSelected(false);
                 ClearCheckFTR_A.setText("P");
             }
-            if (settings.get("FTRClearStatus", "Track Complete").equals("Full Recall")) {
+            else if (settings.get("FTRClearStatus", "Track Complete").equals("Full Recall")) {
                 settings.set("FTRClearStatus", "Full Recall");
                 B50SelPMFTRA.setSelected(false);
                 B50SelFRFTRA.setSelected(true);
@@ -3465,7 +4188,7 @@ public class APC extends Application {
                 B50SelTLFTRA.setSelected(false);
                 ClearCheckFTR_A.setText("F");
             }
-            if (settings.get("FTRClearStatus", "Track Complete").equals("Track Complete")) {
+            else if (settings.get("FTRClearStatus", "Track Complete").equals("Track Complete")) {
                 settings.set("FTRClearStatus", "Track Complete");
                 B50SelPMFTRA.setSelected(false);
                 B50SelFRFTRA.setSelected(false);
@@ -3473,7 +4196,7 @@ public class APC extends Application {
                 B50SelTLFTRA.setSelected(false);
                 ClearCheckFTR_A.setText("C");
             }
-            if (settings.get("FTRClearStatus", "Track Complete").equals("Track Lost")) {
+            else if (settings.get("FTRClearStatus", "Track Complete").equals("Track Lost")) {
                 settings.set("FTRClearStatus", "Track Lost");
                 B50SelPMFTRA.setSelected(false);
                 B50SelFRFTRA.setSelected(false);
@@ -3511,7 +4234,7 @@ public class APC extends Application {
                     throw new IndexOutOfBoundsException();
                 }
                 double Potential = APCLogic.APCLogic_B50(B50song.getConst(2), Score, isCleared);
-                B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(2), B50song.getTitle(2), B50song.getDiff(2), B50song.getLevel(2), B50song.getArtist(2), Score, ClearStatus, Potential), B50Location, 2);
+                B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(2), B50song.getTitle(2), B50song.getDiff(2), B50song.getLevel(2), B50song.getArtist(2), Score, ClearStatus, Potential), B50Location, 2);
             }
             catch (NumberFormatException NFE) {
                 //System.out.println("String to Integer 파싱 실패");
@@ -3526,7 +4249,7 @@ public class APC extends Application {
         DeleteButtonFTR_B.getStyleClass().add("Buttons");
         DeleteButtonFTR_B.setOnAction(PSD -> {
             List<ScoreData> B50List = new ArrayList<ScoreData>();
-            B50jsonRemover(B50List, B50Location, 2);
+            B50jsonRemover(B50song, B50List, B50Location, 2);
             ScoreMatchFTR_B.clear();
             if (settings.get("FTRClearStatus", "Track Complete").equals("Pure Memory")) {
                 settings.set("FTRClearStatus", "Pure Memory");
@@ -3536,7 +4259,7 @@ public class APC extends Application {
                 B50SelTLFTRB.setSelected(false);
                 ClearCheckFTR_B.setText("P");
             }
-            if (settings.get("FTRClearStatus", "Track Complete").equals("Full Recall")) {
+            else if (settings.get("FTRClearStatus", "Track Complete").equals("Full Recall")) {
                 settings.set("FTRClearStatus", "Full Recall");
                 B50SelPMFTRB.setSelected(false);
                 B50SelFRFTRB.setSelected(true);
@@ -3544,7 +4267,7 @@ public class APC extends Application {
                 B50SelTLFTRB.setSelected(false);
                 ClearCheckFTR_B.setText("F");
             }
-            if (settings.get("FTRClearStatus", "Track Complete").equals("Track Complete")) {
+            else if (settings.get("FTRClearStatus", "Track Complete").equals("Track Complete")) {
                 settings.set("FTRClearStatus", "Track Complete");
                 B50SelPMFTRB.setSelected(false);
                 B50SelFRFTRB.setSelected(false);
@@ -3552,7 +4275,7 @@ public class APC extends Application {
                 B50SelTLFTRB.setSelected(false);
                 ClearCheckFTR_B.setText("C");
             }
-            if (settings.get("FTRClearStatus", "Track Complete").equals("Track Lost")) {
+            else if (settings.get("FTRClearStatus", "Track Complete").equals("Track Lost")) {
                 settings.set("FTRClearStatus", "Track Lost");
                 B50SelPMFTRB.setSelected(false);
                 B50SelFRFTRB.setSelected(false);
@@ -3590,7 +4313,7 @@ public class APC extends Application {
                     throw new IndexOutOfBoundsException();
                 }
                 double Potential = APCLogic.APCLogic_B50(B50song.getConst(2), Score, isCleared);
-                B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(2), B50song.getTitle(2), B50song.getDiff(2), B50song.getLevel(2), B50song.getArtist(2), Score, ClearStatus, Potential), B50Location, 2);
+                B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(2), B50song.getTitle(2), B50song.getDiff(2), B50song.getLevel(2), B50song.getArtist(2), Score, ClearStatus, Potential), B50Location, 2);
             }
             catch (NumberFormatException NFE) {
                 //System.out.println("String to Integer 파싱 실패");
@@ -3605,7 +4328,7 @@ public class APC extends Application {
         DeleteButtonFTR_C.getStyleClass().add("Buttons");
         DeleteButtonFTR_C.setOnAction(PSD -> {
             List<ScoreData> B50List = new ArrayList<ScoreData>();
-            B50jsonRemover(B50List, B50Location, 2);
+            B50jsonRemover(B50song, B50List, B50Location, 2);
             ScoreMatchFTR_C.clear();
             if (settings.get("FTRClearStatus", "Track Complete").equals("Pure Memory")) {
                 settings.set("FTRClearStatus", "Pure Memory");
@@ -3615,7 +4338,7 @@ public class APC extends Application {
                 B50SelTLFTRC.setSelected(false);
                 ClearCheckFTR_C.setText("P");
             }
-            if (settings.get("FTRClearStatus", "Track Complete").equals("Full Recall")) {
+            else if (settings.get("FTRClearStatus", "Track Complete").equals("Full Recall")) {
                 settings.set("FTRClearStatus", "Full Recall");
                 B50SelPMFTRC.setSelected(false);
                 B50SelFRFTRC.setSelected(true);
@@ -3623,7 +4346,7 @@ public class APC extends Application {
                 B50SelTLFTRC.setSelected(false);
                 ClearCheckFTR_C.setText("F");
             }
-            if (settings.get("FTRClearStatus", "Track Complete").equals("Track Complete")) {
+            else if (settings.get("FTRClearStatus", "Track Complete").equals("Track Complete")) {
                 settings.set("FTRClearStatus", "Track Complete");
                 B50SelPMFTRC.setSelected(false);
                 B50SelFRFTRC.setSelected(false);
@@ -3631,7 +4354,7 @@ public class APC extends Application {
                 B50SelTLFTRC.setSelected(false);
                 ClearCheckFTR_C.setText("C");
             }
-            if (settings.get("FTRClearStatus", "Track Complete").equals("Track Lost")) {
+            else if (settings.get("FTRClearStatus", "Track Complete").equals("Track Lost")) {
                 settings.set("FTRClearStatus", "Track Lost");
                 B50SelPMFTRC.setSelected(false);
                 B50SelFRFTRC.setSelected(false);
@@ -3670,7 +4393,7 @@ public class APC extends Application {
                     throw new IndexOutOfBoundsException();
                 }
                 double Potential = APCLogic.APCLogic_B50(B50song.getConst(3), Score, isCleared);
-                B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(3), B50song.getTitle(3), B50song.getDiff(3), B50song.getLevel(3), B50song.getArtist(3), Score, ClearStatus, Potential), B50Location, 3);
+                B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(3), B50song.getTitle(3), B50song.getDiff(3), B50song.getLevel(3), B50song.getArtist(3), Score, ClearStatus, Potential), B50Location, 3);
             }
             catch (NumberFormatException NFE) {
                 //System.out.println("String to Integer 파싱 실패");
@@ -3685,7 +4408,7 @@ public class APC extends Application {
         DeleteButtonETR.getStyleClass().add("Buttons");
         DeleteButtonETR.setOnAction(PSD -> {
             List<ScoreData> B50List = new ArrayList<ScoreData>();
-            B50jsonRemover(B50List, B50Location, 3);
+            B50jsonRemover(B50song, B50List, B50Location, 3);
             ScoreMatchETR.clear();
             if (settings.get("ETRClearStatus", "Track Complete").equals("Pure Memory")) {
                 settings.set("ETRClearStatus", "Pure Memory");
@@ -3695,7 +4418,7 @@ public class APC extends Application {
                 B50SelTLETR.setSelected(false);
                 ClearCheckETR.setText("P");
             }
-            if (settings.get("ETRClearStatus", "Track Complete").equals("Full Recall")) {
+            else if (settings.get("ETRClearStatus", "Track Complete").equals("Full Recall")) {
                 settings.set("ETRClearStatus", "Full Recall");
                 B50SelPMETR.setSelected(false);
                 B50SelFRETR.setSelected(true);
@@ -3703,7 +4426,7 @@ public class APC extends Application {
                 B50SelTLETR.setSelected(false);
                 ClearCheckETR.setText("F");
             }
-            if (settings.get("ETRClearStatus", "Track Complete").equals("Track Complete")) {
+            else if (settings.get("ETRClearStatus", "Track Complete").equals("Track Complete")) {
                 settings.set("ETRClearStatus", "Track Complete");
                 B50SelPMETR.setSelected(false);
                 B50SelFRETR.setSelected(false);
@@ -3711,7 +4434,7 @@ public class APC extends Application {
                 B50SelTLETR.setSelected(false);
                 ClearCheckETR.setText("C");
             }
-            if (settings.get("ETRClearStatus", "Track Complete").equals("Track Lost")) {
+            else if (settings.get("ETRClearStatus", "Track Complete").equals("Track Lost")) {
                 settings.set("ETRClearStatus", "Track Lost");
                 B50SelPMETR.setSelected(false);
                 B50SelFRETR.setSelected(false);
@@ -3750,7 +4473,7 @@ public class APC extends Application {
                     throw new IndexOutOfBoundsException();
                 }
                 double Potential = APCLogic.APCLogic_B50(B50song.getConst(4), Score, isCleared);
-                B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(4), B50song.getTitle(4), B50song.getDiff(4), B50song.getLevel(4), B50song.getArtist(4), Score, ClearStatus, Potential), B50Location, 4);
+                B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(4), B50song.getTitle(4), B50song.getDiff(4), B50song.getLevel(4), B50song.getArtist(4), Score, ClearStatus, Potential), B50Location, 4);
             }
             catch (NumberFormatException NFE) {
                 //System.out.println("String to Integer 파싱 실패");
@@ -3765,7 +4488,7 @@ public class APC extends Application {
         DeleteButtonBYD.getStyleClass().add("Buttons");
         DeleteButtonBYD.setOnAction(PSD -> {
             List<ScoreData> B50List = new ArrayList<ScoreData>();
-            B50jsonRemover(B50List, B50Location, 4);
+            B50jsonRemover(B50song, B50List, B50Location, 4);
             ScoreMatchBYD.clear();
             if (settings.get("BYDClearStatus", "Track Complete").equals("Pure Memory")) {
                 settings.set("BYDClearStatus", "Pure Memory");
@@ -3775,7 +4498,7 @@ public class APC extends Application {
                 B50SelTLBYD.setSelected(false);
                 ClearCheckBYD.setText("P");
             }
-            if (settings.get("BYDClearStatus", "Track Complete").equals("Full Recall")) {
+            else if (settings.get("BYDClearStatus", "Track Complete").equals("Full Recall")) {
                 settings.set("BYDClearStatus", "Full Recall");
                 B50SelPMBYD.setSelected(false);
                 B50SelFRBYD.setSelected(true);
@@ -3783,7 +4506,7 @@ public class APC extends Application {
                 B50SelTLBYD.setSelected(false);
                 ClearCheckBYD.setText("F");
             }
-            if (settings.get("BYDClearStatus", "Track Complete").equals("Track Complete")) {
+            else if (settings.get("BYDClearStatus", "Track Complete").equals("Track Complete")) {
                 settings.set("BYDClearStatus", "Track Complete");
                 B50SelPMBYD.setSelected(false);
                 B50SelFRBYD.setSelected(false);
@@ -3791,7 +4514,7 @@ public class APC extends Application {
                 B50SelTLBYD.setSelected(false);
                 ClearCheckBYD.setText("C");
             }
-            if (settings.get("BYDClearStatus", "Track Complete").equals("Track Lost")) {
+            else if (settings.get("BYDClearStatus", "Track Complete").equals("Track Lost")) {
                 settings.set("BYDClearStatus", "Track Lost");
                 B50SelPMBYD.setSelected(false);
                 B50SelFRBYD.setSelected(false);
@@ -3830,7 +4553,7 @@ public class APC extends Application {
                     throw new IndexOutOfBoundsException();
                 }
                 double Potential = APCLogic.APCLogic_B50(B50song.getConst(4), Score, isCleared);
-                B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(4), B50song.getTitle(4), B50song.getDiff(4), B50song.getLevel(4), B50song.getArtist(4), Score, ClearStatus, Potential), B50Location, 4);
+                B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(4), B50song.getTitle(4), B50song.getDiff(4), B50song.getLevel(4), B50song.getArtist(4), Score, ClearStatus, Potential), B50Location, 4);
             }
             catch (NumberFormatException NFE) {
                 //System.out.println("String to Integer 파싱 실패");
@@ -3845,7 +4568,7 @@ public class APC extends Application {
         DeleteButtonLast.getStyleClass().add("Buttons");
         DeleteButtonLast.setOnAction(PSD -> {
             List<ScoreData> B50List = new ArrayList<ScoreData>();
-            B50jsonRemover(B50List, B50Location, 4);
+            B50jsonRemover(B50song, B50List, B50Location, 4);
             ScoreMatchLast.clear();
             if (settings.get("BYDClearStatus", "Track Complete").equals("Pure Memory")) {
                 settings.set("BYDClearStatus", "Pure Memory");
@@ -3855,7 +4578,7 @@ public class APC extends Application {
                 B50SelTLLast.setSelected(false);
                 ClearCheckLast.setText("P");
             }
-            if (settings.get("BYDClearStatus", "Track Complete").equals("Full Recall")) {
+            else if (settings.get("BYDClearStatus", "Track Complete").equals("Full Recall")) {
                 settings.set("BYDClearStatus", "Full Recall");
                 B50SelPMLast.setSelected(false);
                 B50SelFRLast.setSelected(true);
@@ -3863,7 +4586,7 @@ public class APC extends Application {
                 B50SelTLLast.setSelected(false);
                 ClearCheckLast.setText("F");
             }
-            if (settings.get("BYDClearStatus", "Track Complete").equals("Track Complete")) {
+            else if (settings.get("BYDClearStatus", "Track Complete").equals("Track Complete")) {
                 settings.set("BYDClearStatus", "Track Complete");
                 B50SelPMLast.setSelected(false);
                 B50SelFRLast.setSelected(false);
@@ -3871,7 +4594,7 @@ public class APC extends Application {
                 B50SelTLLast.setSelected(false);
                 ClearCheckLast.setText("C");
             }
-            if (settings.get("BYDClearStatus", "Track Complete").equals("Track Lost")) {
+            else if (settings.get("BYDClearStatus", "Track Complete").equals("Track Lost")) {
                 settings.set("BYDClearStatus", "Track Lost");
                 B50SelPMLast.setSelected(false);
                 B50SelFRLast.setSelected(false);
@@ -4560,7 +5283,7 @@ public class APC extends Application {
                         B50SelTLPSTC.setSelected(false);
                         ClearCheckPST_C.setText("P");
                     }
-                    if (settings.get("PSTClearStatus", "Track Complete").equals("Full Recall")) {
+                    else if (settings.get("PSTClearStatus", "Track Complete").equals("Full Recall")) {
                         B50SelPMPSTA.setSelected(false);
                         B50SelFRPSTA.setSelected(true);
                         B50SelTCPSTA.setSelected(false);
@@ -4577,7 +5300,7 @@ public class APC extends Application {
                         B50SelTLPSTC.setSelected(false);
                         ClearCheckPST_C.setText("F");
                     }
-                    if (settings.get("PSTClearStatus", "Track Complete").equals("Track Complete")) {
+                    else if (settings.get("PSTClearStatus", "Track Complete").equals("Track Complete")) {
                         B50SelPMPSTA.setSelected(false);
                         B50SelFRPSTA.setSelected(false);
                         B50SelTCPSTA.setSelected(true);
@@ -4594,7 +5317,7 @@ public class APC extends Application {
                         B50SelTLPSTC.setSelected(false);
                         ClearCheckPST_C.setText("C");
                     }
-                    if (settings.get("PSTClearStatus", "Track Complete").equals("Track Lost")) {
+                    else if (settings.get("PSTClearStatus", "Track Complete").equals("Track Lost")) {
                         B50SelPMPSTA.setSelected(false);
                         B50SelFRPSTA.setSelected(false);
                         B50SelTCPSTA.setSelected(false);
@@ -4633,7 +5356,7 @@ public class APC extends Application {
                         B50SelTLPRSC.setSelected(false);
                         ClearCheckPRS_C.setText("P");
                     }
-                    if (settings.get("PRSClearStatus", "Track Complete").equals("Full Recall")) {
+                    else if (settings.get("PRSClearStatus", "Track Complete").equals("Full Recall")) {
                         B50SelPMPRSA.setSelected(false);
                         B50SelFRPRSA.setSelected(true);
                         B50SelTCPRSA.setSelected(false);
@@ -4650,7 +5373,7 @@ public class APC extends Application {
                         B50SelTLPRSC.setSelected(false);
                         ClearCheckPRS_C.setText("F");
                     }
-                    if (settings.get("PRSClearStatus", "Track Complete").equals("Track Complete")) {
+                    else if (settings.get("PRSClearStatus", "Track Complete").equals("Track Complete")) {
                         B50SelPMPRSA.setSelected(false);
                         B50SelFRPRSA.setSelected(false);
                         B50SelTCPRSA.setSelected(true);
@@ -4667,7 +5390,7 @@ public class APC extends Application {
                         B50SelTLPRSC.setSelected(false);
                         ClearCheckPRS_C.setText("C");
                     }
-                    if (settings.get("PRSClearStatus", "Track Complete").equals("Track Lost")) {
+                    else if (settings.get("PRSClearStatus", "Track Complete").equals("Track Lost")) {
                         B50SelPMPRSA.setSelected(false);
                         B50SelFRPRSA.setSelected(false);
                         B50SelTCPRSA.setSelected(false);
@@ -4706,7 +5429,7 @@ public class APC extends Application {
                         B50SelTLFTRC.setSelected(false);
                         ClearCheckFTR_C.setText("P");
                     }
-                    if (settings.get("FTRClearStatus", "Track Complete").equals("Full Recall")) {
+                    else if (settings.get("FTRClearStatus", "Track Complete").equals("Full Recall")) {
                         B50SelPMFTRA.setSelected(false);
                         B50SelFRFTRA.setSelected(true);
                         B50SelTCFTRA.setSelected(false);
@@ -4723,7 +5446,7 @@ public class APC extends Application {
                         B50SelTLFTRC.setSelected(false);
                         ClearCheckFTR_C.setText("F");
                     }
-                    if (settings.get("FTRClearStatus", "Track Complete").equals("Track Complete")) {
+                    else if (settings.get("FTRClearStatus", "Track Complete").equals("Track Complete")) {
                         B50SelPMFTRA.setSelected(false);
                         B50SelFRFTRA.setSelected(false);
                         B50SelTCFTRA.setSelected(true);
@@ -4740,7 +5463,7 @@ public class APC extends Application {
                         B50SelTLFTRC.setSelected(false);
                         ClearCheckFTR_C.setText("C");
                     }
-                    if (settings.get("FTRClearStatus", "Track Complete").equals("Track Lost")) {
+                    else if (settings.get("FTRClearStatus", "Track Complete").equals("Track Lost")) {
                         B50SelPMFTRA.setSelected(false);
                         B50SelFRFTRA.setSelected(false);
                         B50SelTCFTRA.setSelected(false);
@@ -4767,21 +5490,21 @@ public class APC extends Application {
                         B50SelTLETR.setSelected(false);
                         ClearCheckETR.setText("P");
                     }
-                    if (settings.get("ETRClearStatus", "Track Complete").equals("Full Recall")) {
+                    else if (settings.get("ETRClearStatus", "Track Complete").equals("Full Recall")) {
                         B50SelPMETR.setSelected(false);
                         B50SelFRETR.setSelected(true);
                         B50SelTCETR.setSelected(false);
                         B50SelTLETR.setSelected(false);
                         ClearCheckETR.setText("F");
                     }
-                    if (settings.get("ETRClearStatus", "Track Complete").equals("Track Complete")) {
+                    else if (settings.get("ETRClearStatus", "Track Complete").equals("Track Complete")) {
                         B50SelPMETR.setSelected(false);
                         B50SelFRETR.setSelected(false);
                         B50SelTCETR.setSelected(true);
                         B50SelTLETR.setSelected(false);
                         ClearCheckETR.setText("C");
                     }
-                    if (settings.get("ETRClearStatus", "Track Complete").equals("Track Lost")) {
+                    else if (settings.get("ETRClearStatus", "Track Complete").equals("Track Lost")) {
                         B50SelPMETR.setSelected(false);
                         B50SelFRETR.setSelected(false);
                         B50SelTCETR.setSelected(false);
@@ -4799,21 +5522,21 @@ public class APC extends Application {
                         B50SelTLBYD.setSelected(false);
                         ClearCheckBYD.setText("P");
                     }
-                    if (settings.get("BYDClearStatus", "Track Complete").equals("Full Recall")) {
+                    else if (settings.get("BYDClearStatus", "Track Complete").equals("Full Recall")) {
                         B50SelPMBYD.setSelected(false);
                         B50SelFRBYD.setSelected(true);
                         B50SelTCBYD.setSelected(false);
                         B50SelTLBYD.setSelected(false);
                         ClearCheckBYD.setText("F");
                     }
-                    if (settings.get("BYDClearStatus", "Track Complete").equals("Track Complete")) {
+                    else if (settings.get("BYDClearStatus", "Track Complete").equals("Track Complete")) {
                         B50SelPMBYD.setSelected(false);
                         B50SelFRBYD.setSelected(false);
                         B50SelTCBYD.setSelected(true);
                         B50SelTLBYD.setSelected(false);
                         ClearCheckBYD.setText("C");
                     }
-                    if (settings.get("BYDClearStatus", "Track Complete").equals("Track Lost")) {
+                    else if (settings.get("BYDClearStatus", "Track Complete").equals("Track Lost")) {
                         B50SelPMBYD.setSelected(false);
                         B50SelFRBYD.setSelected(false);
                         B50SelTCBYD.setSelected(false);
@@ -4830,21 +5553,21 @@ public class APC extends Application {
                         B50SelTLLast.setSelected(false);
                         ClearCheckLast.setText("P");
                     }
-                    if (settings.get("BYDClearStatus", "Track Complete").equals("Full Recall")) {
+                    else if (settings.get("BYDClearStatus", "Track Complete").equals("Full Recall")) {
                         B50SelPMLast.setSelected(false);
                         B50SelFRLast.setSelected(true);
                         B50SelTCLast.setSelected(false);
                         B50SelTLLast.setSelected(false);
                         ClearCheckLast.setText("F");
                     }
-                    if (settings.get("BYDClearStatus", "Track Complete").equals("Track Complete")) {
+                    else if (settings.get("BYDClearStatus", "Track Complete").equals("Track Complete")) {
                         B50SelPMLast.setSelected(false);
                         B50SelFRLast.setSelected(false);
                         B50SelTCLast.setSelected(true);
                         B50SelTLLast.setSelected(false);
                         ClearCheckLast.setText("C");
                     }
-                    if (settings.get("BYDClearStatus", "Track Complete").equals("Track Lost")) {
+                    else if (settings.get("BYDClearStatus", "Track Complete").equals("Track Lost")) {
                         B50SelPMLast.setSelected(false);
                         B50SelFRLast.setSelected(false);
                         B50SelTCLast.setSelected(false);
@@ -5207,7 +5930,7 @@ public class APC extends Application {
                         throw new IndexOutOfBoundsException();
                     }
                     double Potential = APCLogic.APCLogic_B50(B50song.getConst(B50DiffInt), Score, isCleared);
-                    B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(B50DiffInt), B50song.getTitle(B50DiffInt), B50song.getDiff(B50DiffInt), B50song.getLevel(B50DiffInt), B50song.getArtist(B50DiffInt), Score, ClearStatus, Potential), B50Location, B50DiffInt);
+                    B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(B50DiffInt), B50song.getTitle(B50DiffInt), B50song.getDiff(B50DiffInt), B50song.getLevel(B50DiffInt), B50song.getArtist(B50DiffInt), Score, ClearStatus, Potential), B50Location, B50DiffInt);
                 }
                 catch (IndexOutOfBoundsException IOOBE_Score) {
                     //System.out.println("점수 범위 초과");
@@ -5257,7 +5980,7 @@ public class APC extends Application {
                         throw new IndexOutOfBoundsException();
                     }
                     double Potential = APCLogic.APCLogic_B50(B50song.getConst(B50DiffInt), Score, isCleared);
-                    B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(B50DiffInt), B50song.getTitle(B50DiffInt), B50song.getDiff(B50DiffInt), B50song.getLevel(B50DiffInt), B50song.getArtist(B50DiffInt), Score, ClearStatus, Potential), B50Location, B50DiffInt);
+                    B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(B50DiffInt), B50song.getTitle(B50DiffInt), B50song.getDiff(B50DiffInt), B50song.getLevel(B50DiffInt), B50song.getArtist(B50DiffInt), Score, ClearStatus, Potential), B50Location, B50DiffInt);
                 }
                 catch (IndexOutOfBoundsException IOOBE_Score) {
                     //System.out.println("점수 범위 초과");
@@ -5307,7 +6030,7 @@ public class APC extends Application {
                         throw new IndexOutOfBoundsException();
                     }
                     double Potential = APCLogic.APCLogic_B50(B50song.getConst(B50DiffInt), Score, isCleared);
-                    B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(B50DiffInt), B50song.getTitle(B50DiffInt), B50song.getDiff(B50DiffInt), B50song.getLevel(B50DiffInt), B50song.getArtist(B50DiffInt), Score, ClearStatus, Potential), B50Location, B50DiffInt);
+                    B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(B50DiffInt), B50song.getTitle(B50DiffInt), B50song.getDiff(B50DiffInt), B50song.getLevel(B50DiffInt), B50song.getArtist(B50DiffInt), Score, ClearStatus, Potential), B50Location, B50DiffInt);
                 }
                 catch (IndexOutOfBoundsException IOOBE_Score) {
                     //System.out.println("점수 범위 초과");
@@ -5357,7 +6080,7 @@ public class APC extends Application {
                         throw new IndexOutOfBoundsException();
                     }
                     double Potential = APCLogic.APCLogic_B50(B50song.getConst(B50DiffInt), Score, isCleared);
-                    B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(B50DiffInt), B50song.getTitle(B50DiffInt), B50song.getDiff(B50DiffInt), B50song.getLevel(B50DiffInt), B50song.getArtist(B50DiffInt), Score, ClearStatus, Potential), B50Location, B50DiffInt);
+                    B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(B50DiffInt), B50song.getTitle(B50DiffInt), B50song.getDiff(B50DiffInt), B50song.getLevel(B50DiffInt), B50song.getArtist(B50DiffInt), Score, ClearStatus, Potential), B50Location, B50DiffInt);
                 }
                 catch (IndexOutOfBoundsException IOOBE_Score) {
                     //System.out.println("점수 범위 초과");
@@ -5407,7 +6130,7 @@ public class APC extends Application {
                         throw new IndexOutOfBoundsException();
                     }
                     double Potential = APCLogic.APCLogic_B50(B50song.getConst(B50DiffInt), Score, isCleared);
-                    B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(B50DiffInt), B50song.getTitle(B50DiffInt), B50song.getDiff(B50DiffInt), B50song.getLevel(B50DiffInt), B50song.getArtist(B50DiffInt), Score, ClearStatus, Potential), B50Location, B50DiffInt);
+                    B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(B50DiffInt), B50song.getTitle(B50DiffInt), B50song.getDiff(B50DiffInt), B50song.getLevel(B50DiffInt), B50song.getArtist(B50DiffInt), Score, ClearStatus, Potential), B50Location, B50DiffInt);
                 }
                 catch (IndexOutOfBoundsException IOOBE_Score) {
                     //System.out.println("점수 범위 초과");
@@ -5457,7 +6180,7 @@ public class APC extends Application {
                         throw new IndexOutOfBoundsException();
                     }
                     double Potential = APCLogic.APCLogic_B50(B50song.getConst(B50DiffInt), Score, isCleared);
-                    B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(B50DiffInt), B50song.getTitle(B50DiffInt), B50song.getDiff(B50DiffInt), B50song.getLevel(B50DiffInt), B50song.getArtist(B50DiffInt), Score, ClearStatus, Potential), B50Location, B50DiffInt);
+                    B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(B50DiffInt), B50song.getTitle(B50DiffInt), B50song.getDiff(B50DiffInt), B50song.getLevel(B50DiffInt), B50song.getArtist(B50DiffInt), Score, ClearStatus, Potential), B50Location, B50DiffInt);
                 }
                 catch (IndexOutOfBoundsException IOOBE_Score) {
                     //System.out.println("점수 범위 초과");
@@ -5507,7 +6230,7 @@ public class APC extends Application {
                         throw new IndexOutOfBoundsException();
                     }
                     double Potential = APCLogic.APCLogic_B50(B50song.getConst(B50DiffInt), Score, isCleared);
-                    B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(B50DiffInt), B50song.getTitle(B50DiffInt), B50song.getDiff(B50DiffInt), B50song.getLevel(B50DiffInt), B50song.getArtist(B50DiffInt), Score, ClearStatus, Potential), B50Location, B50DiffInt);
+                    B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(B50DiffInt), B50song.getTitle(B50DiffInt), B50song.getDiff(B50DiffInt), B50song.getLevel(B50DiffInt), B50song.getArtist(B50DiffInt), Score, ClearStatus, Potential), B50Location, B50DiffInt);
                 }
                 catch (IndexOutOfBoundsException IOOBE_Score) {
                     //System.out.println("점수 범위 초과");
@@ -5557,7 +6280,7 @@ public class APC extends Application {
                         throw new IndexOutOfBoundsException();
                     }
                     double Potential = APCLogic.APCLogic_B50(B50song.getConst(B50DiffInt), Score, isCleared);
-                    B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(B50DiffInt), B50song.getTitle(B50DiffInt), B50song.getDiff(B50DiffInt), B50song.getLevel(B50DiffInt), B50song.getArtist(B50DiffInt), Score, ClearStatus, Potential), B50Location, B50DiffInt);
+                    B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(B50DiffInt), B50song.getTitle(B50DiffInt), B50song.getDiff(B50DiffInt), B50song.getLevel(B50DiffInt), B50song.getArtist(B50DiffInt), Score, ClearStatus, Potential), B50Location, B50DiffInt);
                 }
                 catch (IndexOutOfBoundsException IOOBE_Score) {
                     //System.out.println("점수 범위 초과");
@@ -5607,7 +6330,7 @@ public class APC extends Application {
                         throw new IndexOutOfBoundsException();
                     }
                     double Potential = APCLogic.APCLogic_B50(B50song.getConst(B50DiffInt), Score, isCleared);
-                    B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(B50DiffInt), B50song.getTitle(B50DiffInt), B50song.getDiff(B50DiffInt), B50song.getLevel(B50DiffInt), B50song.getArtist(B50DiffInt), Score, ClearStatus, Potential), B50Location, B50DiffInt);
+                    B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(B50DiffInt), B50song.getTitle(B50DiffInt), B50song.getDiff(B50DiffInt), B50song.getLevel(B50DiffInt), B50song.getArtist(B50DiffInt), Score, ClearStatus, Potential), B50Location, B50DiffInt);
                 }
                 catch (IndexOutOfBoundsException IOOBE_Score) {
                     //System.out.println("점수 범위 초과");
@@ -5657,7 +6380,7 @@ public class APC extends Application {
                         throw new IndexOutOfBoundsException();
                     }
                     double Potential = APCLogic.APCLogic_B50(B50song.getConst(B50DiffInt), Score, isCleared);
-                    B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(B50DiffInt), B50song.getTitle(B50DiffInt), B50song.getDiff(B50DiffInt), B50song.getLevel(B50DiffInt), B50song.getArtist(B50DiffInt), Score, ClearStatus, Potential), B50Location, B50DiffInt);
+                    B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(B50DiffInt), B50song.getTitle(B50DiffInt), B50song.getDiff(B50DiffInt), B50song.getLevel(B50DiffInt), B50song.getArtist(B50DiffInt), Score, ClearStatus, Potential), B50Location, B50DiffInt);
                 }
                 catch (IndexOutOfBoundsException IOOBE_Score) {
                     //System.out.println("점수 범위 초과");
@@ -8192,7 +8915,7 @@ public class APC extends Application {
                             }
                             double Potential = APCLogic.APCLogic_B50(B50song.getConst(B50DiffInt), Score, isCleared);
                             if (B50song.getConst(B50DiffInt) > 0) {
-                                B50jsonSetter(B50List, new ScoreData(B50song, B50song.getIndex(B50DiffInt), B50song.getTitle(B50DiffInt), B50song.getDiff(B50DiffInt), B50song.getLevel(B50DiffInt), B50song.getArtist(B50DiffInt), Score, ClearStatus, Potential), B50Location, B50DiffInt);
+                                B50jsonSetter(B50song, B50List, new ScoreData(B50song, B50song.getIndex(B50DiffInt), B50song.getTitle(B50DiffInt), B50song.getDiff(B50DiffInt), B50song.getLevel(B50DiffInt), B50song.getArtist(B50DiffInt), Score, ClearStatus, Potential), B50Location, B50DiffInt);
                             }
                         }
                         catch (Exception Inner) {
@@ -8261,54 +8984,55 @@ public class APC extends Application {
         BackButton.setOpacity(BBActiveOpacity);
         BackButton.setDisable(false);
 
-        
-        ToggleGroup CSPM = new ToggleGroup();
+        ToggleGroup CSPST = new ToggleGroup();
         RadioMenuItem SelPMPST = new RadioMenuItem("Pure Memory");
-        SelPMPST.setToggleGroup(CSPM);
-        RadioMenuItem SelPMPRS = new RadioMenuItem("Pure Memory");
-        SelPMPRS.setToggleGroup(CSPM);
-        RadioMenuItem SelPMFTR = new RadioMenuItem("Pure Memory");
-        SelPMFTR.setToggleGroup(CSPM);
-        RadioMenuItem SelPMETR = new RadioMenuItem("Pure Memory");
-        SelPMETR.setToggleGroup(CSPM);
-        RadioMenuItem SelPMBYD = new RadioMenuItem("Pure Memory");
-        SelPMBYD.setToggleGroup(CSPM);
-        
-        ToggleGroup CSFR = new ToggleGroup();
+        SelPMPST.setToggleGroup(CSPST);
         RadioMenuItem SelFRPST = new RadioMenuItem("Full Recall");
-        SelFRPST.setToggleGroup(CSFR);
-        RadioMenuItem SelFRPRS = new RadioMenuItem("Full Recall");
-        SelFRPRS.setToggleGroup(CSFR);
-        RadioMenuItem SelFRFTR = new RadioMenuItem("Full Recall");
-        SelFRFTR.setToggleGroup(CSFR);
-        RadioMenuItem SelFRETR = new RadioMenuItem("Full Recall");
-        SelFRETR.setToggleGroup(CSFR);
-        RadioMenuItem SelFRBYD = new RadioMenuItem("Full Recall");
-        SelFRBYD.setToggleGroup(CSFR);
-        
-        ToggleGroup CSTC = new ToggleGroup();
+        SelFRPST.setToggleGroup(CSPST);
         RadioMenuItem SelTCPST = new RadioMenuItem("Track Complete");
-        SelTCPST.setToggleGroup(CSTC);
-        RadioMenuItem SelTCPRS = new RadioMenuItem("Track Complete");
-        SelTCPRS.setToggleGroup(CSTC);
-        RadioMenuItem SelTCFTR = new RadioMenuItem("Track Complete");
-        SelTCFTR.setToggleGroup(CSTC);
-        RadioMenuItem SelTCETR = new RadioMenuItem("Track Complete");
-        SelTCETR.setToggleGroup(CSTC);
-        RadioMenuItem SelTCBYD = new RadioMenuItem("Track Complete");
-        SelTCBYD.setToggleGroup(CSTC);
-        
-        ToggleGroup CSTL = new ToggleGroup();
+        SelTCPST.setToggleGroup(CSPST);
         RadioMenuItem SelTLPST = new RadioMenuItem("Track Lost");
-        SelTLPST.setToggleGroup(CSTL);
+        SelTLPST.setToggleGroup(CSPST);
+        
+        ToggleGroup CSPRS = new ToggleGroup();
+        RadioMenuItem SelPMPRS = new RadioMenuItem("Pure Memory");
+        SelPMPRS.setToggleGroup(CSPRS);
+        RadioMenuItem SelFRPRS = new RadioMenuItem("Full Recall");
+        SelFRPRS.setToggleGroup(CSPRS);
+        RadioMenuItem SelTCPRS = new RadioMenuItem("Track Complete");
+        SelTCPRS.setToggleGroup(CSPRS);
         RadioMenuItem SelTLPRS = new RadioMenuItem("Track Lost");
-        SelTLPRS.setToggleGroup(CSTL);
+        SelTLPRS.setToggleGroup(CSPRS);
+        
+        ToggleGroup CSFTR = new ToggleGroup();
+        RadioMenuItem SelPMFTR = new RadioMenuItem("Pure Memory");
+        SelPMFTR.setToggleGroup(CSFTR);
+        RadioMenuItem SelFRFTR = new RadioMenuItem("Full Recall");
+        SelFRFTR.setToggleGroup(CSFTR);
+        RadioMenuItem SelTCFTR = new RadioMenuItem("Track Complete");
+        SelTCFTR.setToggleGroup(CSFTR);
         RadioMenuItem SelTLFTR = new RadioMenuItem("Track Lost");
-        SelTLFTR.setToggleGroup(CSTL);
+        SelTLFTR.setToggleGroup(CSFTR);
+        
+        ToggleGroup CSETR = new ToggleGroup();
+        RadioMenuItem SelPMETR = new RadioMenuItem("Pure Memory");
+        SelPMETR.setToggleGroup(CSETR);
+        RadioMenuItem SelFRETR = new RadioMenuItem("Full Recall");
+        SelFRETR.setToggleGroup(CSETR);
+        RadioMenuItem SelTCETR = new RadioMenuItem("Track Complete");
+        SelTCETR.setToggleGroup(CSETR);
         RadioMenuItem SelTLETR = new RadioMenuItem("Track Lost");
-        SelTLETR.setToggleGroup(CSTL);
+        SelTLETR.setToggleGroup(CSETR);
+        
+        ToggleGroup CSBYD = new ToggleGroup();
+        RadioMenuItem SelPMBYD = new RadioMenuItem("Pure Memory");
+        SelPMBYD.setToggleGroup(CSBYD);
+        RadioMenuItem SelFRBYD = new RadioMenuItem("Full Recall");
+        SelFRBYD.setToggleGroup(CSBYD);
+        RadioMenuItem SelTCBYD = new RadioMenuItem("Track Complete");
+        SelTCBYD.setToggleGroup(CSBYD);
         RadioMenuItem SelTLBYD = new RadioMenuItem("Track Lost");
-        SelTLBYD.setToggleGroup(CSTL);
+        SelTLBYD.setToggleGroup(CSBYD);
         
         if (settings.get("PSTClearStatus", "Track Complete").equals("Pure Memory")) {
             settings.set("PSTClearStatus", "Pure Memory");
@@ -8317,21 +9041,21 @@ public class APC extends Application {
             SelTCPST.setSelected(false);
             SelTLPST.setSelected(false);
         }
-        if (settings.get("PSTClearStatus", "Track Complete").equals("Full Recall")) {
+        else if (settings.get("PSTClearStatus", "Track Complete").equals("Full Recall")) {
             settings.set("PSTClearStatus", "Full Recall");
             SelPMPST.setSelected(false);
             SelFRPST.setSelected(true);
             SelTCPST.setSelected(false);
             SelTLPST.setSelected(false);
         }
-        if (settings.get("PSTClearStatus", "Track Complete").equals("Track Complete")) {
+        else if (settings.get("PSTClearStatus", "Track Complete").equals("Track Complete")) {
             settings.set("PSTClearStatus", "Track Complete");
             SelPMPST.setSelected(false);
             SelFRPST.setSelected(false);
             SelTCPST.setSelected(true);
             SelTLPST.setSelected(false);
         }
-        if (settings.get("PSTClearStatus", "Track Complete").equals("Track Lost")) {
+        else if (settings.get("PSTClearStatus", "Track Complete").equals("Track Lost")) {
             settings.set("PSTClearStatus", "Track Lost");
             SelPMPST.setSelected(false);
             SelFRPST.setSelected(false);
@@ -8346,21 +9070,21 @@ public class APC extends Application {
             SelTCPRS.setSelected(false);
             SelTLPRS.setSelected(false);
         }
-        if (settings.get("PRSClearStatus", "Track Complete").equals("Full Recall")) {
+        else if (settings.get("PRSClearStatus", "Track Complete").equals("Full Recall")) {
             settings.set("PRSClearStatus", "Full Recall");
             SelPMPRS.setSelected(false);
             SelFRPRS.setSelected(true);
             SelTCPRS.setSelected(false);
             SelTLPRS.setSelected(false);
         }
-        if (settings.get("PRSClearStatus", "Track Complete").equals("Track Complete")) {
+        else if (settings.get("PRSClearStatus", "Track Complete").equals("Track Complete")) {
             settings.set("PRSClearStatus", "Track Complete");
             SelPMPRS.setSelected(false);
             SelFRPRS.setSelected(false);
             SelTCPRS.setSelected(true);
             SelTLPRS.setSelected(false);
         }
-        if (settings.get("PRSClearStatus", "Track Complete").equals("Track Lost")) {
+        else if (settings.get("PRSClearStatus", "Track Complete").equals("Track Lost")) {
             settings.set("PRSClearStatus", "Track Lost");
             SelPMPRS.setSelected(false);
             SelFRPRS.setSelected(false);
@@ -8375,21 +9099,21 @@ public class APC extends Application {
             SelTCFTR.setSelected(false);
             SelTLFTR.setSelected(false);
         }
-        if (settings.get("FTRClearStatus", "Track Complete").equals("Full Recall")) {
+        else if (settings.get("FTRClearStatus", "Track Complete").equals("Full Recall")) {
             settings.set("FTRClearStatus", "Full Recall");
             SelPMFTR.setSelected(false);
             SelFRFTR.setSelected(true);
             SelTCFTR.setSelected(false);
             SelTLFTR.setSelected(false);
         }
-        if (settings.get("FTRClearStatus", "Track Complete").equals("Track Complete")) {
+        else if (settings.get("FTRClearStatus", "Track Complete").equals("Track Complete")) {
             settings.set("FTRClearStatus", "Track Complete");
             SelPMFTR.setSelected(false);
             SelFRFTR.setSelected(false);
             SelTCFTR.setSelected(true);
             SelTLFTR.setSelected(false);
         }
-        if (settings.get("FTRClearStatus", "Track Complete").equals("Track Lost")) {
+        else if (settings.get("FTRClearStatus", "Track Complete").equals("Track Lost")) {
             settings.set("FTRClearStatus", "Track Lost");
             SelPMFTR.setSelected(false);
             SelFRFTR.setSelected(false);
@@ -8404,21 +9128,21 @@ public class APC extends Application {
             SelTCETR.setSelected(false);
             SelTLETR.setSelected(false);
         }
-        if (settings.get("ETRClearStatus", "Track Complete").equals("Full Recall")) {
+        else if (settings.get("ETRClearStatus", "Track Complete").equals("Full Recall")) {
             settings.set("ETRClearStatus", "Full Recall");
             SelPMETR.setSelected(false);
             SelFRETR.setSelected(true);
             SelTCETR.setSelected(false);
             SelTLETR.setSelected(false);
         }
-        if (settings.get("ETRClearStatus", "Track Complete").equals("Track Complete")) {
+        else if (settings.get("ETRClearStatus", "Track Complete").equals("Track Complete")) {
             settings.set("ETRClearStatus", "Track Complete");
             SelPMETR.setSelected(false);
             SelFRETR.setSelected(false);
             SelTCETR.setSelected(true);
             SelTLETR.setSelected(false);
         }
-        if (settings.get("ETRClearStatus", "Track Complete").equals("Track Lost")) {
+        else if (settings.get("ETRClearStatus", "Track Complete").equals("Track Lost")) {
             settings.set("ETRClearStatus", "Track Lost");
             SelPMETR.setSelected(false);
             SelFRETR.setSelected(false);
@@ -8433,21 +9157,21 @@ public class APC extends Application {
             SelTCBYD.setSelected(false);
             SelTLBYD.setSelected(false);
         }
-        if (settings.get("BYDClearStatus", "Track Complete").equals("Full Recall")) {
+        else if (settings.get("BYDClearStatus", "Track Complete").equals("Full Recall")) {
             settings.set("BYDClearStatus", "Full Recall");
             SelPMBYD.setSelected(false);
             SelFRBYD.setSelected(true);
             SelTCBYD.setSelected(false);
             SelTLBYD.setSelected(false);
         }
-        if (settings.get("BYDClearStatus", "Track Complete").equals("Track Complete")) {
+        else if (settings.get("BYDClearStatus", "Track Complete").equals("Track Complete")) {
             settings.set("BYDClearStatus", "Track Complete");
             SelPMBYD.setSelected(false);
             SelFRBYD.setSelected(false);
             SelTCBYD.setSelected(true);
             SelTLBYD.setSelected(false);
         }
-        if (settings.get("BYDClearStatus", "Track Complete").equals("Track Lost")) {
+        else if (settings.get("BYDClearStatus", "Track Complete").equals("Track Lost")) {
             settings.set("BYDClearStatus", "Track Lost");
             SelPMBYD.setSelected(false);
             SelFRBYD.setSelected(false);
@@ -8456,18 +9180,23 @@ public class APC extends Application {
         }
 
         MenuButton PSTDefaultSelection = new MenuButton(settings.get("PSTClearStatus", "Track Complete"));
+        PSTDefaultSelection.setPrefWidth(131);
         PSTDefaultSelection.getItems().clear();
         PSTDefaultSelection.getItems().addAll(SelPMPST, SelFRPST, SelTCPST, SelTLPST);
         MenuButton PRSDefaultSelection = new MenuButton(settings.get("PRSClearStatus", "Track Complete"));
+        PRSDefaultSelection.setPrefWidth(131);
         PRSDefaultSelection.getItems().clear();
         PRSDefaultSelection.getItems().addAll(SelPMPRS, SelFRPRS, SelTCPRS, SelTLPRS);
         MenuButton FTRDefaultSelection = new MenuButton(settings.get("FTRClearStatus", "Track Complete"));
+        FTRDefaultSelection.setPrefWidth(131);
         FTRDefaultSelection.getItems().clear();
         FTRDefaultSelection.getItems().addAll(SelPMFTR, SelFRFTR, SelTCFTR, SelTLFTR);
         MenuButton ETRDefaultSelection = new MenuButton(settings.get("ETRClearStatus", "Track Complete"));
+        ETRDefaultSelection.setPrefWidth(131);
         ETRDefaultSelection.getItems().clear();
         ETRDefaultSelection.getItems().addAll(SelPMETR, SelFRETR, SelTCETR, SelTLETR);
         MenuButton BYDDefaultSelection = new MenuButton(settings.get("BYDClearStatus", "Track Complete"));
+        BYDDefaultSelection.setPrefWidth(131);
         BYDDefaultSelection.getItems().clear();
         BYDDefaultSelection.getItems().addAll(SelPMBYD, SelFRBYD, SelTCBYD, SelTLBYD);
 
@@ -9364,6 +10093,7 @@ public class APC extends Application {
             catch (NumberFormatException e) {
                 scoreValid = false;
                 scoreError.setText("유효하지 않은 점수입니다.");
+                autoResultLabel.setText(String.valueOf(String.format("결과 포텐셜 :%n--") + String.format("%n%n보면상수 :%n%.1f%n%n총 노트 수 :%n%d", song.getConst(diffInt), song.getNotes(diffInt))));
             }
         }
         if (scoreValid) {
