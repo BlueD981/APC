@@ -6,7 +6,7 @@
 
     <groupId>arcpotcalc</groupId>
     <artifactId>apc</artifactId>
-    <version>5.1</version>
+    <version>5.2</version>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>

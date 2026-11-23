@@ -231,7 +231,7 @@
     -fx-background-radius: 0;
     -fx-background-insets: 0;
 }
-.table-view .arrow {
+.table-cell .table-view .arrow {
     -fx-padding: 3px;
 }
 .table-view .column-header-background {

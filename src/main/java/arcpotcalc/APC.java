@@ -16,6 +16,7 @@ import java.math.RoundingMode;
 import java.util.*;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.beans.value.ChangeListener;
 
@@ -75,7 +76,7 @@ public class APC extends Application {
     private StackPane rootLayout;
     private StackPane contentArea;
 
-    private String version = "5.1";
+    private String version = "5.2";
     private String info = String.format("Arcaea Potential Calculator (ver. %s)", version);
     private String OS;
     
@@ -416,6 +417,7 @@ public class APC extends Application {
                     isCleared = false;
                 }
             }
+            System.out.println(settings.get("PSTClearStatus", "0") + settings.get("PRSClearStatus", "0") + settings.get("FTRClearStatus", "0") + settings.get("ETRClearStatus", "0") +settings.get("BYDClearStatus", "0"));
         }
         
         SaveSelPM.setOnAction(a -> {
@@ -458,7 +460,6 @@ public class APC extends Application {
         ClearCheckSave.getItems().clear();
         ClearCheckSave.getItems().addAll(SaveSelPM, SaveSelFR, SaveSelTC, SaveSelTL);
         ClearCheckSave.setPrefWidth(50);
-        SaveSelTC.setSelected(true);
         
         List<ScoreData> SDLCopy = new ArrayList<>();
         try (FileReader reader = new FileReader(B50Location)) {
@@ -511,6 +512,7 @@ public class APC extends Application {
                 saveTitleLabelold.setText(String.format("[%s %s] %s", song.getDiff(diffInt), song.getLevel(diffInt), song.getTitle(diffInt)));
                 saveScoreLabelold.setText("기록 없음");
                 saveClearLabelold.setText("-");
+                scoreDifference.setText(String.format("( + %s )", getPrettyScore(score)));
                 saveTitleLabelnew.setText(String.format("[%s %s] %s", song.getDiff(diffInt), song.getLevel(diffInt), song.getTitle(diffInt)));
             }
         }
@@ -518,6 +520,7 @@ public class APC extends Application {
             saveTitleLabelold.setText(String.format("[%s %s] %s", song.getDiff(diffInt), song.getLevel(diffInt), song.getTitle(diffInt)));
             saveScoreLabelold.setText("기록 없음");
             saveClearLabelold.setText("-");
+            scoreDifference.setText(String.format("( + %s )", getPrettyScore(score)));
             saveTitleLabelnew.setText(String.format("[%s %s] %s", song.getDiff(diffInt), song.getLevel(diffInt), song.getTitle(diffInt)));
         }
         if (score >= 9900000) {
@@ -828,7 +831,7 @@ public class APC extends Application {
         }
         List<ScoreData> SDL30 = new ArrayList<>();
         List<ScoreData> SDL50 = new ArrayList<>();
-        if (SDLCopy != null && SDLCopy.size() >= 0 && SDLCopy.size() > 50) {
+        if (SDLCopy != null && SDLCopy.size() >= 50) {
             for (int i = 0; i < 30; i++) {
                 SDL30.add(SDLCopy.get(i));
             }
@@ -836,11 +839,16 @@ public class APC extends Application {
                 SDL50.add(SDLCopy.get(j));
             }
         }
-        else if (SDLCopy != null && SDLCopy.size() >= 0 && SDLCopy.size() <= 50) {
-            if (SDLCopy.size() >= 30) {
-                ;
+        else if (SDLCopy != null && SDLCopy.size() >= 0 && SDLCopy.size() < 50) {
+            if (SDLCopy.size() > 30) {
+                for (int i = 0; i < 30; i++) {
+                    SDL30.add(SDLCopy.get(i));
+                }
+                for (int i = 30; i < SDLCopy.size(); i++) {
+                    SDL50.add(SDLCopy.get(i));
+                }
             }
-            else if (SDLCopy.size() < 30) {
+            else if (SDLCopy.size() <= 30) {
                 SDL30 = SDLCopy;
             }
         }
@@ -912,6 +920,29 @@ public class APC extends Application {
                     tooltip.setText(item);
                     setTooltip(tooltip);
                 }
+
+                TableRow<ScoreData> row = getTableRow();
+                ScoreData SI = (row != null) ? row.getItem() : null;
+                if (SI == null) {
+                    return;
+                }
+
+                if (settings.get("B50DiffColor", "Y").equals("Y")) {
+                    String SIDiff = SI.getDifficulty();
+                    if ("PST".equals(SIDiff)) {
+                        setStyle("-fx-text-fill: #49808e");
+                    } else if ("PRS".equals(SIDiff)) {
+                        setStyle("-fx-text-fill: #90a246");
+                    } else if ("FTR".equals(SIDiff)) {
+                        setStyle("-fx-text-fill: #b95da1");
+                    } else if ("ETR".equals(SIDiff)) {
+                        setStyle("-fx-text-fill: #a178e1");
+                    } else if ("BYD".equals(SIDiff)) {
+                        setStyle("-fx-text-fill: #af4351");
+                    } else if ("INS".equals(SIDiff)) {
+                        setStyle("-fx-text-fill: #5f5ec1");
+                    }
+                }
             }
         });
         
@@ -954,6 +985,45 @@ public class APC extends Application {
                 } else {
                     setText(String.valueOf(getIndex() + 1));
                 }
+
+                if (getIndex() < 10) {
+                    setStyle("-fx-text-fill: #aa9a33");
+                }
+                else {
+                    setStyle("");
+                }
+            }
+        });
+
+        B30RClearColB.setCellFactory(column -> new TableCell<ScoreData, String>() {
+            @Override 
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setText(null);
+                }
+                else {
+                    setText(item);
+                }
+
+                TableRow<ScoreData> row = getTableRow();
+                ScoreData SI = (row != null) ? row.getItem() : null;
+                if (SI == null) {
+                    return;
+                }
+
+                if (settings.get("B50ClearColor", "Y").equals("Y")) {
+                    String SIClr = SI.getShortClearStatus();
+                    if ("P".equals(SIClr)) {
+                        setStyle("-fx-text-fill: #1d83dc");
+                    } else if ("F".equals(SIClr)) {
+                        setStyle("-fx-text-fill: #ae2ed9");
+                    } else if ("C".equals(SIClr)) {
+                        setStyle("");
+                    } else if ("L".equals(SIClr)) {
+                        setStyle("-fx-text-fill: #b02828");
+                    }
+                }
             }
         });
         
@@ -970,6 +1040,29 @@ public class APC extends Application {
                     setText(item);
                     tooltip.setText(item);
                     setTooltip(tooltip);
+                }
+
+                TableRow<ScoreData> row = getTableRow();
+                ScoreData SI = (row != null) ? row.getItem() : null;
+                if (SI == null) {
+                    return;
+                }
+
+                if (settings.get("B50DiffColor", "Y").equals("Y")) {
+                    String SIDiff = SI.getDifficulty();
+                    if ("PST".equals(SIDiff)) {
+                        setStyle("-fx-text-fill: #49808e");
+                    } else if ("PRS".equals(SIDiff)) {
+                        setStyle("-fx-text-fill: #90a246");
+                    } else if ("FTR".equals(SIDiff)) {
+                        setStyle("-fx-text-fill: #b95da1");
+                    } else if ("ETR".equals(SIDiff)) {
+                        setStyle("-fx-text-fill: #a178e1");
+                    } else if ("BYD".equals(SIDiff)) {
+                        setStyle("-fx-text-fill: #af4351");
+                    } else if ("INS".equals(SIDiff)) {
+                        setStyle("-fx-text-fill: #5f5ec1");
+                    }
                 }
             }
         });
@@ -1012,6 +1105,38 @@ public class APC extends Application {
                     setText(null);
                 } else {
                     setText(String.valueOf(getIndex() + 31));
+                }
+            }
+        });
+
+        B50RClearColB.setCellFactory(column -> new TableCell<ScoreData, String>() {
+            @Override 
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setText(null);
+                }
+                else {
+                    setText(item);
+                }
+
+                TableRow<ScoreData> row = getTableRow();
+                ScoreData SI = (row != null) ? row.getItem() : null;
+                if (SI == null) {
+                    return;
+                }
+
+                if (settings.get("B50ClearColor", "Y").equals("Y")) {
+                    String SIClr = SI.getShortClearStatus();
+                    if ("P".equals(SIClr)) {
+                        setStyle("-fx-text-fill: #1d83dc");
+                    } else if ("F".equals(SIClr)) {
+                        setStyle("-fx-text-fill: #ae2ed9");
+                    } else if ("C".equals(SIClr)) {
+                        setStyle("");
+                    } else if ("L".equals(SIClr)) {
+                        setStyle("-fx-text-fill: #b02828");
+                    }
                 }
             }
         });
@@ -1182,15 +1307,22 @@ public class APC extends Application {
     /*                                                      start                                                      */
     /* --------------------------------------------------------------------------------------------------------------- */
     
+    MenuBar menuBar = new MenuBar();
+    Menu pageMenu = new Menu("페이지");
+    MenuItem MainMenuMenu = new MenuItem("메인 메뉴");
+    MenuItem ManualInputMenu = new MenuItem("직접 입력");
+    MenuItem AutoInputMenu = new MenuItem("곡 검색 및 입력");
+    MenuItem B50Menu = new MenuItem("B50 조회 및 관리");
+    MenuItem SDAutoInputMenu = new MenuItem("스코어 데이터 자동 입력");
+    MenuItem SDManualInputMenu = new MenuItem("스코어 데이터 수동 입력");
+    MenuItem SettingsMenu = new MenuItem("설정");
+    MenuItem AppInfoMenu = new MenuItem("앱 정보");
+
     MenuBar menuBarStarter() {
-        MenuBar menuBar = new MenuBar();
         menuBar.setUseSystemMenuBar(true);
         
-        System.out.println(OS);
-        
-        Menu pageMenu = new Menu("페이지");
+        System.out.println(OS);    
 
-        MenuItem MainMenuMenu = new MenuItem("메인 메뉴");
         MainMenuMenu.setOnAction(MIMA -> {
             CA.clear();
             CA.add(mainMenu());
@@ -1199,7 +1331,6 @@ public class APC extends Application {
             new KeyCodeCombination(KeyCode.DIGIT0, KeyCombination.SHORTCUT_DOWN)
         );
 
-        MenuItem ManualInputMenu = new MenuItem("직접 입력");
         ManualInputMenu.setOnAction(MIMA -> {
             CA.clear();
             CA.add(ManualInput());
@@ -1208,7 +1339,6 @@ public class APC extends Application {
             new KeyCodeCombination(KeyCode.DIGIT1, KeyCombination.SHORTCUT_DOWN)
         );
 
-        MenuItem AutoInputMenu = new MenuItem("곡 검색 및 입력");
         AutoInputMenu.setOnAction(AIMA -> {
             CA.clear();
             CA.add(AutoInput());
@@ -1217,7 +1347,6 @@ public class APC extends Application {
             new KeyCodeCombination(KeyCode.DIGIT2, KeyCombination.SHORTCUT_DOWN)
         );
 
-        MenuItem B50Menu = new MenuItem("B50 조회 및 관리");
         B50Menu.setOnAction(B50MA -> {
             CA.clear();
             CA.add(B50());
@@ -1226,7 +1355,6 @@ public class APC extends Application {
             new KeyCodeCombination(KeyCode.DIGIT3, KeyCombination.SHORTCUT_DOWN)
         );
 
-        MenuItem SDAutoInputMenu = new MenuItem("스코어 데이터 자동 입력");
         SDAutoInputMenu.setOnAction(SDAIMA -> {
             CA.clear();
             CA.add(B50Manage());
@@ -1235,7 +1363,6 @@ public class APC extends Application {
             new KeyCodeCombination(KeyCode.DIGIT1, KeyCombination.ALT_DOWN, KeyCombination.SHORTCUT_DOWN)
         );
 
-        MenuItem SDManualInputMenu = new MenuItem("스코어 데이터 수동 입력");
         SDManualInputMenu.setOnAction(SDMIMA -> {
             CA.clear();
             CA.add(B50Input());
@@ -1244,7 +1371,6 @@ public class APC extends Application {
             new KeyCodeCombination(KeyCode.DIGIT2, KeyCombination.ALT_DOWN, KeyCombination.SHORTCUT_DOWN)
         );
         
-        MenuItem SettingsMenu = new MenuItem("설정");
         SettingsMenu.setOnAction(SMA -> {
             CA.clear();
             CA.add(Settings());
@@ -1253,7 +1379,6 @@ public class APC extends Application {
             new KeyCodeCombination(KeyCode.DIGIT4, KeyCombination.SHORTCUT_DOWN)
         );
 
-        MenuItem AppInfoMenu = new MenuItem("앱 정보");
         AppInfoMenu.setOnAction(AIMA -> {
             CA.clear();
             CA.add(AppInfo());
@@ -1567,6 +1692,12 @@ public class APC extends Application {
     /* -------------------------------------------------------------------------------------------------------------- */
     /*                                                    mainMenu                                                    */
     /* -------------------------------------------------------------------------------------------------------------- */
+    
+    Button ManualBtn = new Button("직접 입력");
+    Button AutoBtn = new Button("곡 검색 및 자동 입력");
+    Button B50Btn = new Button("B50 조회 및 관리");
+    Button SettingsBtn = new Button("설정");
+    Button InfoBtn = new Button("앱 정보");
 
     public GridPane mainMenu() {
         PageIndex = 0;
@@ -1585,12 +1716,6 @@ public class APC extends Application {
         Label versionLabel = new Label(info);
         versionLabel.setFocusTraversable(true);
         /*versionLabel.setAlignment(Pos.CENTER_RIGHT);*/
-
-        Button ManualBtn = new Button("직접 입력");
-        Button AutoBtn = new Button("곡 검색 및 자동 입력");
-        Button B50Btn = new Button("B50 조회 및 관리");
-        Button SettingsBtn = new Button("설정");
-        Button InfoBtn = new Button("앱 정보");
         ManualBtn.getStyleClass().add("Buttons");
         AutoBtn.getStyleClass().add("Buttons");
         B50Btn.getStyleClass().add("Buttons");
@@ -1697,13 +1822,13 @@ public class APC extends Application {
 
     private TextField bpField = new TextField();
     private TextField noteCountField = new TextField();
-
+    
     public GridPane ManualInput() {
         PageIndex = 1;
-
+        
         BackButton.setOpacity(BBActiveOpacity);
         BackButton.setDisable(false);
-
+        
         if (settings.get("clearCheckBoxDefault", "Checked").equals("Checked")) {
             settings.set("clearCheckBoxDefault", "Checked");
             isCleared = true;
@@ -1725,37 +1850,58 @@ public class APC extends Application {
                 clearCheck.setSelected(false);
             }
         }
-
+        
         numInput();
-
+        
         GridPane mnip = new GridPane();
         mnip.getStyleClass().add("Panes");
         mnip.setHgap(10);
         mnip.setVgap(10);
-
+        
         int FieldSize = 250;
-
+        
         mnip.add(new Label("보면상수 :"), 5, 5);
         bpField.setPromptText("여기에 보면상수 입력");
         bpField.setMinWidth(FieldSize);
         bpField.setMaxWidth(FieldSize);
         mnip.add(bpField, 5, 6);
         bpField.textProperty().addListener(bpListener);
-
+        TextFormatter<String> lengthFormatterBF = new TextFormatter<>(change -> {
+            if (change.getControlNewText().length() <= 4) {
+                return change;
+            }
+            return null;
+        });
+        bpField.setTextFormatter(lengthFormatterBF);
+        
         mnip.add(new Label("점수 :"), 5, 8);
         scoreField.setPromptText("여기에 점수 입력");
         scoreField.setMinWidth(FieldSize);
         scoreField.setMaxWidth(FieldSize);
         mnip.add(scoreField, 5, 9);
         scoreField.textProperty().addListener(ManualScoreListener);
-
+        TextFormatter<String> lengthFormatterSF = new TextFormatter<>(change -> {
+            if (change.getControlNewText().length() <= 8) {
+                return change;
+            }
+            return null;
+        });
+        scoreField.setTextFormatter(lengthFormatterSF);
+        
         mnip.add(new Label("노트 수 :"), 5, 11);
         noteCountField.setPromptText("여기에 노트 수 입력");
         noteCountField.setMinWidth(FieldSize);
         noteCountField.setMaxWidth(FieldSize);
         mnip.add(noteCountField, 5, 12);
         noteCountField.textProperty().addListener(noteCountListener);
-
+        TextFormatter<String> lengthFormatterNCF = new TextFormatter<>(change -> {
+            if (change.getControlNewText().length() <= 4) {
+                return change;
+            }
+            return null;
+        });
+        noteCountField.setTextFormatter(lengthFormatterNCF);
+        
         mnip.add(bpError, 5, 7);
         mnip.add(scoreError, 5, 10);
         mnip.add(noteCountError, 5, 13);
@@ -1822,6 +1968,10 @@ public class APC extends Application {
 
         BackButton.setOpacity(BBActiveOpacity);
         BackButton.setDisable(false);
+
+        song = null;
+
+        autoResultLabel.setText(String.format("결과 포텐셜 :%n--%n%n보면상수 :%n--%n%n총 노트 수 :%n--"));
 
         if (settings.get("clearCheckBoxDefault", "Checked").equals("Checked")) {
             settings.set("clearCheckBoxDefault", "Checked");
@@ -2024,6 +2174,13 @@ public class APC extends Application {
         searchResultTable.getSelectionModel().selectedItemProperty().addListener(resultListener);
 
         searchField.setPromptText("여기에 검색어 입력");
+        TextFormatter<String> lengthFormatterSearchF = new TextFormatter<>(change -> {
+            if (change.getControlNewText().length() <= 150) {
+                return change;
+            }
+            return null;
+        });
+        searchField.setTextFormatter(lengthFormatterSearchF);
         searchField.textProperty().addListener((obs, old, val) -> {
             searchResultTable.setItems(filteredSongs(DiffList, searchField.getText()));
         });
@@ -2031,6 +2188,13 @@ public class APC extends Application {
         GridPane scoreFieldPane = new GridPane();
         scoreFieldPane.setHgap(10);
         scoreField.setPromptText("여기에 점수 입력");
+        TextFormatter<String> lengthFormatterSF = new TextFormatter<>(change -> {
+            if (change.getControlNewText().length() <= 8) {
+                return change;
+            }
+            return null;
+        });
+        scoreField.setTextFormatter(lengthFormatterSF);
         scoreField.textProperty().addListener(AutoScoreListener);
         scoreField.setMinWidth(130);
         scoreField.setMaxWidth(130);
@@ -2126,33 +2290,49 @@ public class APC extends Application {
         double B30PTTsum = 0;
         double B50PTTsum = 0;
         List<ScoreData> SDL50 = new ArrayList<>();
-        if (SDLCopy != null && SDLCopy.size() >= 0 && SDLCopy.size() > 50) {
-            for (int i = 0; i < 50; i++) {
-                B50PTTsum += SDLCopy.get(i).getPotential();
-                SDL50.add(SDLCopy.get(i));
-            }
-            for (int j = 0; j < 30; j++) {
-                B30PTTsum += SDLCopy.get(j).getPotential();
-            }
-            for (int k = 0; k < 10; k++) {
-                B10PTTsum += SDLCopy.get(k).getPotential();
-            }
-        }
-        else if (SDLCopy != null && SDLCopy.size() >= 0 && SDLCopy.size() <= 50) {
-            SDL50 = SDLCopy;
-            if (SDLCopy.size() <= 50 && SDLCopy.size() > 30) {
-                for (int l = 0; l < SDL50.size(); l++) {
-                    B50PTTsum += SDLCopy.get(l).getPotential();
+        if (SDLCopy != null) {
+            if (SDLCopy.size() > 0) {
+                if (SDLCopy.size() < 50) {
+                    SDL50 = SDLCopy;
+                    if (SDLCopy.size() >= 30) {
+                        for (int i = 0; i < SDLCopy.size(); i++) {
+                            B50PTTsum += SDLCopy.get(i).getPotential();
+                        }
+                        for (int i = 0; i < 30; i++) {
+                            B30PTTsum += SDLCopy.get(i).getPotential();
+                        }
+                        for (int i = 0; i < 10; i++) {
+                            B10PTTsum += SDLCopy.get(i).getPotential();
+                        }
+                    }
+                    else if (SDLCopy.size() < 30 && SDLCopy.size() >= 10) {
+                        for (int i = 0; i < SDLCopy.size(); i++) {
+                            B50PTTsum += SDLCopy.get(i).getPotential();
+                            B30PTTsum += SDLCopy.get(i).getPotential();
+                        }
+                        for (int i = 0; i < 10; i++) {
+                            B10PTTsum += SDLCopy.get(i).getPotential();
+                        }
+                    }
+                    else if (SDLCopy.size() < 10) {
+                        for (int i = 0; i < SDLCopy.size(); i++) {
+                            B50PTTsum += SDLCopy.get(i).getPotential();
+                            B30PTTsum += SDLCopy.get(i).getPotential();
+                            B10PTTsum += SDLCopy.get(i).getPotential();
+                        }
+                    }
                 }
-            }
-            else if (SDLCopy.size() <= 30 && SDLCopy.size() > 10) {
-                for (int m = 0; m < SDLCopy.size(); m++) {
-                    B30PTTsum += SDLCopy.get(m).getPotential();
-                }
-            }
-            else if (SDLCopy.size() <= 10) {
-                for (int n = 0; n < SDLCopy.size(); n++) {
-                    B10PTTsum += SDLCopy.get(n).getPotential();
+                else if (SDLCopy.size() >= 50) {
+                    for (int i = 0; i < 50; i++) {
+                        SDL50.add(SDLCopy.get(i));
+                        B50PTTsum += SDLCopy.get(i).getPotential();
+                    }
+                    for (int i = 0; i < 30; i++) {
+                        B30PTTsum += SDLCopy.get(i).getPotential();
+                    }
+                    for (int i = 0; i < 10; i++) {
+                        B10PTTsum += SDLCopy.get(i).getPotential();
+                    }
                 }
             }
         }
@@ -2224,6 +2404,29 @@ public class APC extends Application {
                     tooltip.setText(item);
                     setTooltip(tooltip);
                 }
+
+                TableRow<ScoreData> row = getTableRow();
+                ScoreData SI = (row != null) ? row.getItem() : null;
+                if (SI == null) {
+                    return;
+                }
+
+                if (settings.get("B50DiffColor", "Y").equals("Y")) {
+                    String SIDiff = SI.getDifficulty();
+                    if ("PST".equals(SIDiff)) {
+                        setStyle("-fx-text-fill: #49808e");
+                    } else if ("PRS".equals(SIDiff)) {
+                        setStyle("-fx-text-fill: #90a246");
+                    } else if ("FTR".equals(SIDiff)) {
+                        setStyle("-fx-text-fill: #b95da1");
+                    } else if ("ETR".equals(SIDiff)) {
+                        setStyle("-fx-text-fill: #a178e1");
+                    } else if ("BYD".equals(SIDiff)) {
+                        setStyle("-fx-text-fill: #af4351");
+                    } else if ("INS".equals(SIDiff)) {
+                        setStyle("-fx-text-fill: #5f5ec1");
+                    }
+                }
             }
         });
 
@@ -2265,6 +2468,13 @@ public class APC extends Application {
                     setText(null);
                 } else {
                     setText(String.valueOf(getIndex() + 1));
+                }
+
+                if (getIndex() < 10) {
+                    setStyle("-fx-text-fill: #aa9a33");
+                }
+                else {
+                    setStyle("");
                 }
             }
         });
@@ -2458,6 +2668,18 @@ public class APC extends Application {
         String getDifficulty() {
             return Difficulty;
         }
+        int getDiffIndex() {
+            int DiffIndex;
+            return DiffIndex = switch(Difficulty) {
+                case "PST" -> 0;
+                case "PRS" -> 1;
+                case "FTR" -> 2;
+                case "ETR" -> 3;
+                case "BYD" -> 4;
+                case "INS" -> 4;
+                default -> -1;
+            };
+        }
         String getLevel() {
             return Level;
         }
@@ -2584,7 +2806,7 @@ public class APC extends Application {
                         iterator.remove();
                         removed = true;
                         System.out.println("수정");
-                        break; // 1건만 교체하는 게 맞을 때 유지
+                        break;
                     }
                 }
 
@@ -2793,17 +3015,101 @@ public class APC extends Application {
         B50SelTLLast.setToggleGroup(B50LastTG);
         
         TextField ScoreMatchPST_A = new TextField();
+        TextFormatter<String> lengthFormatterPST_A = new TextFormatter<>(change -> {
+            if (change.getControlNewText().length() <= 8) {
+                return change;
+            }
+            return null;
+        });
+        ScoreMatchPST_A.setTextFormatter(lengthFormatterPST_A);
         TextField ScoreMatchPST_B = new TextField();
+        TextFormatter<String> lengthFormatterPST_B = new TextFormatter<>(change -> {
+            if (change.getControlNewText().length() <= 8) {
+                return change;
+            }
+            return null;
+        });
+        ScoreMatchPST_B.setTextFormatter(lengthFormatterPST_B);
         TextField ScoreMatchPST_C = new TextField();
+        TextFormatter<String> lengthFormatterPST_C = new TextFormatter<>(change -> {
+            if (change.getControlNewText().length() <= 8) {
+                return change;
+            }
+            return null;
+        });
+        ScoreMatchPST_C.setTextFormatter(lengthFormatterPST_C);
         TextField ScoreMatchPRS_A = new TextField();
+        TextFormatter<String> lengthFormatterPRS_A = new TextFormatter<>(change -> {
+            if (change.getControlNewText().length() <= 8) {
+                return change;
+            }
+            return null;
+        });
+        ScoreMatchPRS_A.setTextFormatter(lengthFormatterPRS_A);
         TextField ScoreMatchPRS_B = new TextField();
+        TextFormatter<String> lengthFormatterPRS_B = new TextFormatter<>(change -> {
+            if (change.getControlNewText().length() <= 8) {
+                return change;
+            }
+            return null;
+        });
+        ScoreMatchPRS_B.setTextFormatter(lengthFormatterPRS_B);
         TextField ScoreMatchPRS_C = new TextField();
+        TextFormatter<String> lengthFormatterPRS_C = new TextFormatter<>(change -> {
+            if (change.getControlNewText().length() <= 8) {
+                return change;
+            }
+            return null;
+        });
+        ScoreMatchPRS_C.setTextFormatter(lengthFormatterPRS_C);
         TextField ScoreMatchFTR_A = new TextField();
+        TextFormatter<String> lengthFormatterFTR_A = new TextFormatter<>(change -> {
+            if (change.getControlNewText().length() <= 8) {
+                return change;
+            }
+            return null;
+        });
+        ScoreMatchFTR_A.setTextFormatter(lengthFormatterFTR_A);
         TextField ScoreMatchFTR_B = new TextField();
+        TextFormatter<String> lengthFormatterFTR_B = new TextFormatter<>(change -> {
+            if (change.getControlNewText().length() <= 8) {
+                return change;
+            }
+            return null;
+        });
+        ScoreMatchFTR_B.setTextFormatter(lengthFormatterFTR_B);
         TextField ScoreMatchFTR_C = new TextField();
+        TextFormatter<String> lengthFormatterFTR_C = new TextFormatter<>(change -> {
+            if (change.getControlNewText().length() <= 8) {
+                return change;
+            }
+            return null;
+        });
+        ScoreMatchFTR_C.setTextFormatter(lengthFormatterFTR_C);
         TextField ScoreMatchETR = new TextField();
+        TextFormatter<String> lengthFormatterETR = new TextFormatter<>(change -> {
+            if (change.getControlNewText().length() <= 8) {
+                return change;
+            }
+            return null;
+        });
+        ScoreMatchETR.setTextFormatter(lengthFormatterETR);
         TextField ScoreMatchBYD = new TextField();
+        TextFormatter<String> lengthFormatterBYD = new TextFormatter<>(change -> {
+            if (change.getControlNewText().length() <= 8) {
+                return change;
+            }
+            return null;
+        });
+        ScoreMatchBYD.setTextFormatter(lengthFormatterBYD);
         TextField ScoreMatchLast = new TextField();
+        TextFormatter<String> lengthFormatter = new TextFormatter<>(change -> {
+            if (change.getControlNewText().length() <= 8) {
+                return change;
+            }
+            return null;
+        });
+        ScoreMatchLast.setTextFormatter(lengthFormatter);
         ScoreMatchPST_A.setPrefWidth(100);
         ScoreMatchPST_B.setPrefWidth(100);
         ScoreMatchPST_C.setPrefWidth(100);
@@ -6403,6 +6709,13 @@ public class APC extends Application {
         TextField InputField = new TextField();
         InputField.setPrefWidth(Grid2Widths);
         InputField.setPromptText("붙여넣기");
+        TextFormatter<String> lengthFormatterIF = new TextFormatter<>(change -> {
+            if (change.getControlNewText().length() <= 2000) {
+                return change;
+            }
+            return null;
+        });
+        InputField.setTextFormatter(lengthFormatterIF);
         
         InputField.requestFocus();
         
@@ -8940,7 +9253,7 @@ public class APC extends Application {
                     }
                 }
             }
-            if (settings.get("AutoClear", "N").equals("Y")) {
+            if (settings.get("AutoClear", "Y").equals("Y")) {
                 InputField.clear();
             }
         });
@@ -9409,7 +9722,7 @@ public class APC extends Application {
         settingsGrid.getStyleClass().add("Panes");
         settingsGrid.setFocusTraversable(false);
         settingsGrid.setHgap(10);
-        settingsGrid.setVgap(10);
+        settingsGrid.setVgap(65);
 
         ScrollPane settingsScroll = new ScrollPane(settingsGrid);
         settingsScroll.getStyleClass().add("Panes");
@@ -9421,10 +9734,9 @@ public class APC extends Application {
         Label SETTINGSTITLE = new Label("환경설정");
         SETTINGSTITLE.setFocusTraversable(false);
         SETTINGSTITLE.getStyleClass().add("SETTINGSTITLE");
-        SETTINGSTITLEPANE.add(SETTINGSTITLE, 0, 0);
-        SETTINGSTITLEPANE.add(new Label(""), 0, 2);
+        SETTINGSTITLEPANE.add(SETTINGSTITLE, 0, 5);
         
-        settingsGrid.add(SETTINGSTITLEPANE, 5, 5);
+        settingsGrid.add(SETTINGSTITLEPANE, 5, 0);
 
 
 
@@ -9446,6 +9758,13 @@ public class APC extends Application {
         UsernameSettingsGrid.setHgap(10);
         UsernameSettingsGrid.setVgap(20);
         TextField UsernameField = new TextField();
+        TextFormatter<String> lengthFormatterUNF = new TextFormatter<>(change -> {
+            if (change.getControlNewText().length() <= 15) {
+                return change;
+            }
+            return null;
+        });
+        UsernameField.setTextFormatter(lengthFormatterUNF);
         UsernameField.setPrefWidth(150);
         UsernameField.setText(Username);
         UsernameField.setFocusTraversable(false);
@@ -9460,8 +9779,7 @@ public class APC extends Application {
         UserSettingsGrid1.add(UsernameSettingsGrid, 0, 1);
         UserSettingsGrid.add(UserSettingsGrid1, 0, 1);
 
-        UserSettingsGrid.add(new Label(""), 0, 3);
-        settingsGrid.add(UserSettingsGrid, 5, 6);
+        settingsGrid.add(UserSettingsGrid, 5, 1);
 
 
 
@@ -9590,8 +9908,7 @@ public class APC extends Application {
             }*/
         });
         
-        DisplaySettingsGrid.add(new Label(""), 0, 3);
-        settingsGrid.add(DisplaySettingsGrid, 5, 7);
+        settingsGrid.add(DisplaySettingsGrid, 5, 2);
         
         
         
@@ -9626,7 +9943,7 @@ public class APC extends Application {
         
         GridPane clearCheckBoxDefaultGrid = new GridPane();
         clearCheckBoxDefaultGrid.getStyleClass().add("Panes");
-        clearCheckBoxDefaultGrid.setHgap(22);
+        clearCheckBoxDefaultGrid.setHgap(45);
         clearCheckBoxDefaultGrid.setVgap(10);
         clearCheckBoxDefaultGrid.add(clearChecked, 0, 0);
         clearCheckBoxDefaultGrid.add(clearUnchecked, 1, 0);
@@ -9697,8 +10014,7 @@ public class APC extends Application {
             }
         });
         
-        ResultCalcGrid.add(new Label(""), 0, 3);
-        settingsGrid.add(ResultCalcGrid, 5, 8);
+        settingsGrid.add(ResultCalcGrid, 5, 3);
         
         
         
@@ -9761,12 +10077,12 @@ public class APC extends Application {
         autoClearSettingsGrid.add(autoClearGrid, 0, 1);
         B50SettingsGrid.add(autoClearSettingsGrid, 0, 3);
 
-        if (settings.get("AutoClear", "N").equals("Y")) {
+        if (settings.get("AutoClear", "Y").equals("Y")) {
             settings.set("AutoClear", "Y");
             AutoClear.setSelected(true);
             DoNotClear.setSelected(false);
         }
-        else if (settings.get("AutoClear", "N").equals("N")) {
+        else if (settings.get("AutoClear", "Y").equals("N")) {
             settings.set("AutoClear", "N");
             DoNotClear.setSelected(true);
             AutoClear.setSelected(false);
@@ -9785,8 +10101,187 @@ public class APC extends Application {
             }
         });
 
-        B50SettingsGrid.add(new Label(""), 0, 4);
-        settingsGrid.add(B50SettingsGrid, 5, 9);
+        GridPane B50DiffColorGrid = new GridPane();
+        B50DiffColorGrid.setHgap(10);
+        B50DiffColorGrid.setVgap(10);
+        Label B50DiffColorLabel = new Label("B50 난이도별 색상 표시 설정");
+        B50DiffColorLabel.setFocusTraversable(false);
+        B50DiffColorLabel.getStyleClass().add("settingsCategorySubTitle");
+        B50DiffColorGrid.add(B50DiffColorLabel, 0, 0);
+        ToggleGroup B50DiffColorTG = new ToggleGroup();
+        RadioButton B50DiffColorYes = new RadioButton("색상 표시");
+        B50DiffColorYes.getStyleClass().add("RadioButton");
+        B50DiffColorYes.setToggleGroup(B50DiffColorTG);
+        RadioButton B50DiffColorNo = new RadioButton("색상 미표시");
+        B50DiffColorNo.getStyleClass().add("RadioButton");
+        B50DiffColorNo.setToggleGroup(B50DiffColorTG);
+        GridPane B50DiffColorTBGrid = new GridPane();
+        B50DiffColorTBGrid.setHgap(85);
+        B50DiffColorTBGrid.add(B50DiffColorYes, 0, 0);
+        B50DiffColorTBGrid.add(B50DiffColorNo, 1, 0);
+        B50DiffColorGrid.add(B50DiffColorTBGrid, 0, 1);
+        B50SettingsGrid.add(B50DiffColorGrid, 0, 5);
+
+        if (settings.get("B50DiffColor", "Y").equals("Y")) {
+            settings.set("B50DiffColor", "Y");
+            B50DiffColorYes.setSelected(true);
+            B50DiffColorNo.setSelected(false);
+        }
+        else if (settings.get("B50DiffColor", "Y").equals("N")) {
+            settings.set("B50DiffColor", "N");
+            B50DiffColorYes.setSelected(false);
+            B50DiffColorNo.setSelected(true);
+        }
+
+        B50DiffColorTG.selectedToggleProperty().addListener((obs, old, val) -> {
+            if (B50DiffColorYes.isSelected()) {
+                settings.set("B50DiffColor", "Y");
+                B50DiffColorYes.setSelected(true);
+                B50DiffColorNo.setSelected(false);
+            }
+            else if (B50DiffColorNo.isSelected()) {
+                settings.set("B50DiffColor", "N");
+                B50DiffColorYes.setSelected(false);
+                B50DiffColorNo.setSelected(true);
+            }
+        });
+
+        GridPane B50ClearColorGrid = new GridPane();
+        B50ClearColorGrid.setHgap(10);
+        B50ClearColorGrid.setVgap(10);
+        Label B50ClearColorLabel = new Label("B50 클리어별 색상 표시 설정");
+        B50ClearColorLabel.setFocusTraversable(false);
+        B50ClearColorLabel.getStyleClass().add("settingsCategorySubTitle");
+        B50ClearColorGrid.add(B50ClearColorLabel, 0, 0);
+        ToggleGroup B50ClearColorTG = new ToggleGroup();
+        RadioButton B50ClearColorYes = new RadioButton("색상 표시");
+        B50ClearColorYes.getStyleClass().add("RadioButton");
+        B50ClearColorYes.setToggleGroup(B50ClearColorTG);
+        RadioButton B50ClearColorNo = new RadioButton("색상 미표시");
+        B50ClearColorNo.getStyleClass().add("RadioButton");
+        B50ClearColorNo.setToggleGroup(B50ClearColorTG);
+        GridPane B50ClearColorTBGrid = new GridPane();
+        B50ClearColorTBGrid.setHgap(85);
+        B50ClearColorTBGrid.add(B50ClearColorYes, 0, 0);
+        B50ClearColorTBGrid.add(B50ClearColorNo, 1, 0);
+        B50ClearColorGrid.add(B50ClearColorTBGrid, 0, 1);
+        B50SettingsGrid.add(B50ClearColorGrid, 0, 7);
+        
+        if (settings.get("B50ClearColor", "Y").equals("Y")) {
+            settings.set("B50ClearColor", "Y");
+            B50ClearColorYes.setSelected(true);
+            B50ClearColorNo.setSelected(false);
+        }
+        else if (settings.get("B50ClearColor", "Y").equals("N")) {
+            settings.set("B50ClearColor", "N");
+            B50ClearColorYes.setSelected(false);
+            B50ClearColorNo.setSelected(true);
+        }
+        
+        B50ClearColorTG.selectedToggleProperty().addListener((obs, old, val) -> {
+            if (B50ClearColorYes.isSelected()) {
+                settings.set("B50ClearColor", "Y");
+                B50ClearColorYes.setSelected(true);
+                B50ClearColorNo.setSelected(false);
+            }
+            else if (B50ClearColorNo.isSelected()) {
+                settings.set("B50ClearColor", "N");
+                B50ClearColorYes.setSelected(false);
+                B50ClearColorNo.setSelected(true);
+            }
+        });
+
+        GridPane B50SyncGrid = new GridPane();
+        B50SyncGrid.setHgap(10);
+        B50SyncGrid.setVgap(10);
+        Label B50SyncLabel = new Label("B50 버전 동기화");
+        B50SyncLabel.setFocusTraversable(false);
+        B50SyncLabel.getStyleClass().add("settingsCategorySubTitle");
+        B50SyncGrid.add(B50SyncLabel, 0, 0);
+        Button B50SyncBtn = new Button("버전 동기화");
+        B50SyncBtn.getStyleClass().add("Buttons");
+        B50SyncBtn.setPrefWidth(150);
+        B50SyncGrid.add(B50SyncBtn, 0, 1);
+        B50SettingsGrid.add(B50SyncGrid, 0, 9);
+
+        B50SyncBtn.setOnAction(event -> {
+            B50Menu.setDisable(true);
+            SDAutoInputMenu.setDisable(true);
+            SDManualInputMenu.setDisable(true);
+            B50Btn.setDisable(true);
+
+            Thread workerThread = new Thread(() -> {
+                try {
+                    try (FileReader reader = new FileReader(B50Location)) {
+                        Type listType = new TypeToken<List<ScoreData>>() {}.getType();
+                        List<ScoreData> sdList = B50Builder.fromJson(reader, listType);
+
+                        if (sdList != null && !sdList.isEmpty()) {
+                            SDLCopy = new ArrayList<>(sdList);
+                            SDLCopy.sort(
+                                Comparator.comparingLong((ScoreData a) -> Math.round(a.getPotential() * 1000000.0))
+                                    .reversed()
+                                    .thenComparing(ScoreData::getIndex)
+                                    .thenComparing(ScoreData::getSong)
+                            );
+                        } else {
+                            Platform.runLater(() -> B50jsonStarter(null));
+                            if (SDLCopy != null) {
+                                SDLCopy.clear();
+                            }
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        System.out.println("파일이 존재하지 않음");
+                        Platform.runLater(() -> B50jsonStarter(null));
+                    }
+
+                    if (SDLCopy != null && !SDLCopy.isEmpty()) {
+                        int total = SDLCopy.size();
+                        for (int i = 0; i < total; i++) {
+                            ScoreData current = SDLCopy.get(i);
+                            Songs song = current.getSong();
+                            double Potential = 0;
+                            boolean SyncIsCleared = true;
+                            if (current.getClearStatus().equals("Pure Memory") || current.getClearStatus().equals("Full Recall") || current.getClearStatus().equals("Track Complete")) {
+                                SyncIsCleared = true;
+                            }
+                            else {
+                                SyncIsCleared = false;
+                            }
+                            Potential = APCLogic.APCLogic_B50(song.getConst(current.getDiffIndex()), current.getScore(), SyncIsCleared);
+                            ScoreData copyData = new ScoreData(song, song.getIndex(current.getDiffIndex()), song.getTitle(current.getDiffIndex()), song.getDiff(current.getDiffIndex()), song.getLevel(current.getDiffIndex()), song.getArtist(current.getDiffIndex()), current.getScore(), current.getClearStatus(), Potential);
+
+                            B50jsonSetter(song, SDLCopy, copyData, B50Location, current.getDiffIndex());
+
+                            double progress = (double) 100 * (i + 1) / total;
+                            String text = String.format("완료: %.2f%%", progress);
+
+                            Platform.runLater(() -> B50SyncBtn.setText(text));
+                        }
+                    }
+                }
+                catch (Exception e) {
+                    Platform.runLater(() -> {
+                        showErrorMessage("스코어 데이터 버전 동기화 실패", "동기화 중 에러가 발생하여 스코어 데이터를 초기화합니다.", "확인", 430, 100);
+                        B50jsonStarter(null);
+                    });
+                }
+
+                Platform.runLater(() -> {
+                    B50SyncBtn.setText("버전 동기화");
+                    B50Menu.setDisable(false);
+                    SDAutoInputMenu.setDisable(false);
+                    SDManualInputMenu.setDisable(false);
+                    B50Btn.setDisable(false);
+                });
+            });
+
+            workerThread.setDaemon(true);
+            workerThread.start();
+        });
+        
+        settingsGrid.add(B50SettingsGrid, 5, 4);
         
         
         
@@ -9808,26 +10303,21 @@ public class APC extends Application {
             LightTheme.setSelected(true);
             DarkTheme.setSelected(false);
             try {
-                /*//System.out.println(settingsScroll.getScene());*/
                 String cssPath = getClass().getResource("/css/APCLight.css").toExternalForm();
                 settingsScroll.getScene().getStylesheets().clear();
                 settingsScroll.getScene().getStylesheets().add(cssPath);
-                /*//System.out.println("Light성공");*/
             }
             catch (Exception e) {
                 e.printStackTrace();
                 try {
-                    /*//System.out.println(settingsScroll.getScene());*/
                     settingsScroll.getScene().getStylesheets().clear();
                     settingsScroll.getScene().getStylesheets().add(new java.io.File("src/main/resources/css/APCLight.css").toURI().toURL().toExternalForm());
-                    /*//System.out.println("Light성공");*/
                 }
                 catch (Exception f) {
                     f.printStackTrace();
-                    /*//System.out.println("Light실패");*/
+                    System.out.println("Light실패");
                 }
             }
-            /*//System.out.println(themeStatus);*/
 
             settings.set("clearCheckBoxDefault", "Checked");
             clearChecked.setSelected(true);
@@ -9875,10 +10365,18 @@ public class APC extends Application {
             settings.set("AutoClear", "Y");
             AutoClear.setSelected(true);
             DoNotClear.setSelected(false);
+
+            settings.set("B50DiffColor", "Y");
+            B50DiffColorYes.setSelected(true);
+            B50DiffColorNo.setSelected(false);
+
+            settings.set("B5ClearColor", "Y");
+            B50ClearColorYes.setSelected(true);
+            B50ClearColorNo.setSelected(false);
         });
 
         ResetGrid.add(new Label(""), 0, 4);
-        settingsGrid.add(ResetGrid, 5, 11);
+        settingsGrid.add(ResetGrid, 5, 5);
 
         
         settingsScroll.setFitToWidth(true);
@@ -9926,7 +10424,7 @@ public class APC extends Application {
         MakerLabel.getStyleClass().add("AppInfoCategoryTitle");
         AppInfoGrid.add(MakerLabel, 5, 9);
         AppInfoGrid.add(WLabel(String.format(
-            "       BlueD981" /*+ "\n"*/ +
+            "       BlueD981" /*+ "%n"*/ +
             ""
             )
         ), 5, 10);
@@ -9935,7 +10433,7 @@ public class APC extends Application {
         ArcaeaVersionLabel.getStyleClass().add("AppInfoCategoryTitle");
         AppInfoGrid.add(ArcaeaVersionLabel, 5, 13);
         AppInfoGrid.add(WLabel(String.format(
-            "       v7.3.1" /*+ "\n"*/ +
+            "       v7.3.1" /*+ "%n"*/ +
             ""
             )
         ), 5, 14);
@@ -9944,12 +10442,25 @@ public class APC extends Application {
         FontLabel.getStyleClass().add("AppInfoCategoryTitle");
         AppInfoGrid.add(FontLabel, 5, 17);
         AppInfoGrid.add(WLabel(String.format(
-            "       [네이버 주식회사 | 프로그램 전체] 나눔고딕" /*+ "\n"*/ +
+            "       [네이버 주식회사 | 프로그램 전체] 나눔고딕" /*+ "%n"*/ +
             ""
             )
         ), 5, 18);
 
-        AppInfoGrid.add(new Label(""), 5, 21);
+        Label STLabel = new Label("Special Thanks");
+        STLabel.getStyleClass().add("AppInfoCategoryTitle");
+        AppInfoGrid.add(STLabel, 5, 21);
+        AppInfoGrid.add(WLabel(String.format(
+            "       antodeu   |   다크 모드 색상 제의 및 버그 제보" + "%n" +
+            "       mango_nyan   |   버그 제보 및 해결" + "%n" +
+            "       @wytpq   |   B50 난이도별 색상 분류 제의 및 버그 제보" + "%n" +
+            
+            "%n" +
+            "       닉네임/핸들은 특수문자 구분 없이 오름차순으로 정렬합니다."
+            )
+        ), 5, 22);
+
+        AppInfoGrid.add(new Label(""), 5, 25);
 
         ScrollPane AppInfoScroll = new ScrollPane(AppInfoGrid);
         AppInfoScroll.getStyleClass().add("Panes");
