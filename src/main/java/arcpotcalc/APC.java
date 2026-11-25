@@ -68,6 +68,7 @@ public class APC extends Application {
     private Label scoreError = new Label("");
     private Label resultLabel = new Label(String.format("결과 포텐셜 :%n--"));
     private Label AOInputError = new Label("");
+    private Label versionLabel;
 
     private ChangeListener<String> bpListener = (obs, old, val) -> numInput();
     private ChangeListener<String> noteCountListener = (obs, old, val) -> numInput();
@@ -76,24 +77,26 @@ public class APC extends Application {
     private StackPane rootLayout;
     private StackPane contentArea;
 
-    private String version = "5.2";
+    private String version = "5.2.1";
     private String info = String.format("Arcaea Potential Calculator (ver. %s)", version);
     private String OS;
     
     private String Username;
     
     private TextField scoreField = new TextField();
+
+    private boolean Locked = false;
     
     /* -------------------------------------------------------------------------------------------------------------- */
     /*                                                showErrorMessage                                                */
     /* -------------------------------------------------------------------------------------------------------------- */
     
-    Label ErrorMessageLabel = new Label();
     
     private void showErrorMessage(String title, String message, String buttonMessage, int width, int height) {
         Stage alertStage = new Stage();
         alertStage.setTitle(title);
         
+        Label ErrorMessageLabel = new Label();
         ErrorMessageLabel.setText(message);
         
         GridPane alertGrid1 = new GridPane();
@@ -179,14 +182,6 @@ public class APC extends Application {
     /*                                                   saveWindow                                                   */
     /* -------------------------------------------------------------------------------------------------------------- */
     
-    Label saveTitleLabelold = new Label();
-    Label saveScoreLabelold = new Label();
-    Label saveClearLabelold = new Label();
-    Label saveTitleLabelnew = new Label();
-    Label saveScoreLabelnew = new Label();
-    
-    Label scoreDifference = new Label();
-    
     String getPrettyScore(int score) {
         String commaScore = String.format("%,d", score);
         String commaScoreB = commaScore.replace(",", "\'");
@@ -198,6 +193,14 @@ public class APC extends Application {
     private void saveWindow(Songs song, boolean cleared, int score) {
         Stage saveStage = new Stage();
         saveStage.setTitle("세부 정보 입력");
+        
+        Label saveTitleLabelold = new Label();
+        Label saveScoreLabelold = new Label();
+        Label saveClearLabelold = new Label();
+        Label saveTitleLabelnew = new Label();
+        Label saveScoreLabelnew = new Label();
+        
+        Label scoreDifference = new Label();
         
         saveTitleLabelold.setPrefWidth(200);
         saveScoreLabelold.setPrefWidth(150);
@@ -225,6 +228,13 @@ public class APC extends Application {
             SaveSelTC.setSelected(false);
             SaveSelTL.setSelected(true);
             ClearCheckSave.setText("L");
+        }
+        else if (cleared && score >= 10000000) {
+            SaveSelPM.setSelected(true);
+            SaveSelFR.setSelected(false);
+            SaveSelTC.setSelected(false);
+            SaveSelTL.setSelected(false);
+            ClearCheckSave.setText("P");
         }
         else {
             if (diffInt == 0) {
@@ -1447,18 +1457,21 @@ public class APC extends Application {
         BackButton.setStyle("-fx-font-size: 10px;");
         BackButton.setPrefSize(25, 25);
         BackButton.setFocusTraversable(false);
-        
         BackButton.getStyleClass().add("BackButton");
-        
         StackPane.setAlignment(BackButton, Pos.TOP_LEFT);
         StackPane.setMargin(BackButton, new Insets(15, 0, 0, 15));
+
+        versionLabel = new Label(info);
+        versionLabel.setFocusTraversable(true);
+        StackPane.setAlignment(versionLabel, Pos.BOTTOM_RIGHT);
+        StackPane.setMargin(versionLabel, new Insets(15, 15, 15, 15));
         
         BackButton.setOnAction(back -> {
             go_back();
         });
         
         CA.add(mainMenu());
-        RL.addAll(contentArea, BackButton);
+        RL.addAll(contentArea, BackButton, versionLabel);
         
         Scene primaryScene = new Scene(rootLayout, 640, 360);
         try {
@@ -1606,22 +1619,28 @@ public class APC extends Application {
             primaryScene.getAccelerators().put(
                 new KeyCodeCombination(KeyCode.DIGIT3, KeyCombination.SHORTCUT_DOWN),
                 () -> {
-                    CA.clear();
-                    CA.add(B50());
+                    if (!Locked) {
+                        CA.clear();
+                        CA.add(B50());
+                    }
                 }
             );
             primaryScene.getAccelerators().put(
                 new KeyCodeCombination(KeyCode.DIGIT1, KeyCombination.ALT_DOWN, KeyCombination.SHORTCUT_DOWN),
                 () -> {
-                    CA.clear();
-                    CA.add(B50Manage());
+                    if (!Locked) {
+                        CA.clear();
+                        CA.add(B50Manage());
+                    }
                 }
             );
             primaryScene.getAccelerators().put(
                 new KeyCodeCombination(KeyCode.DIGIT2, KeyCombination.ALT_DOWN, KeyCombination.SHORTCUT_DOWN),
                 () -> {
-                    CA.clear();
-                    CA.add(B50Input());
+                    if (!Locked) {
+                        CA.clear();
+                        CA.add(B50Input());
+                    }
                 }
             );
             primaryScene.getAccelerators().put(
@@ -1701,6 +1720,7 @@ public class APC extends Application {
 
     public GridPane mainMenu() {
         PageIndex = 0;
+        versionLabel.setOpacity(100);
 
         BackButton.setOpacity(BBInactiveOpacity);
         BackButton.setDisable(true);
@@ -1713,9 +1733,6 @@ public class APC extends Application {
         menu1.setHgap(10);
         menu1.setVgap(10);
 
-        Label versionLabel = new Label(info);
-        versionLabel.setFocusTraversable(true);
-        /*versionLabel.setAlignment(Pos.CENTER_RIGHT);*/
         ManualBtn.getStyleClass().add("Buttons");
         AutoBtn.getStyleClass().add("Buttons");
         B50Btn.getStyleClass().add("Buttons");
@@ -1785,7 +1802,6 @@ public class APC extends Application {
         menu_info.setHgap(MIHgap);
         menu_info.setVgap(25);
         menu_info.add(blankLabel, 0, 0);
-        menu_info.add(versionLabel, 1, 1);
 
         menu.add(menu1, 0, 0);
         menu.add(menu_info, 0, 1);
@@ -1825,6 +1841,7 @@ public class APC extends Application {
     
     public GridPane ManualInput() {
         PageIndex = 1;
+        versionLabel.setOpacity(0);
         
         BackButton.setOpacity(BBActiveOpacity);
         BackButton.setDisable(false);
@@ -1965,6 +1982,7 @@ public class APC extends Application {
 
     public GridPane AutoInput() {
         PageIndex = 2;
+        versionLabel.setOpacity(0);
 
         BackButton.setOpacity(BBActiveOpacity);
         BackButton.setDisable(false);
@@ -2258,6 +2276,7 @@ public class APC extends Application {
     
     public GridPane B50() {
         PageIndex = 3;
+        versionLabel.setOpacity(0);
         
         try (FileReader reader = new FileReader(B50Location)) {
             Type ListType = new TypeToken<List<ScoreData>>() {}.getType();
@@ -2882,6 +2901,7 @@ public class APC extends Application {
 
     public GridPane B50Input() {
         PageIndex = 31;
+        versionLabel.setOpacity(0);
 
         BackButton.setOpacity(BBActiveOpacity);
         BackButton.setDisable(false);
@@ -5935,6 +5955,8 @@ public class APC extends Application {
     
     public GridPane B50Manage() {
         PageIndex = 32;
+        versionLabel.setOpacity(0);
+
         B50SelPst.setToggleGroup(B50Sels);
         B50SelPrs.setToggleGroup(B50Sels);
         B50SelFtr.setToggleGroup(B50Sels);
@@ -9293,6 +9315,7 @@ public class APC extends Application {
 
     public ScrollPane Settings() {
         PageIndex = 4;
+        versionLabel.setOpacity(0);
 
         BackButton.setOpacity(BBActiveOpacity);
         BackButton.setDisable(false);
@@ -10205,10 +10228,11 @@ public class APC extends Application {
         B50SettingsGrid.add(B50SyncGrid, 0, 9);
 
         B50SyncBtn.setOnAction(event -> {
-            B50Menu.setDisable(true);
-            SDAutoInputMenu.setDisable(true);
-            SDManualInputMenu.setDisable(true);
+            //B50Menu.setDisable(true);
+            //SDAutoInputMenu.setDisable(true);
+            // SDManualInputMenu.setDisable(true);
             B50Btn.setDisable(true);
+            Locked = true;
 
             Thread workerThread = new Thread(() -> {
                 try {
@@ -10274,6 +10298,7 @@ public class APC extends Application {
                     SDAutoInputMenu.setDisable(false);
                     SDManualInputMenu.setDisable(false);
                     B50Btn.setDisable(false);
+                    Locked = false;
                 });
             });
 
@@ -10391,6 +10416,7 @@ public class APC extends Application {
     
     public ScrollPane AppInfo() {
         PageIndex = 5;
+        versionLabel.setOpacity(0);
 
         BackButton.setOpacity(BBActiveOpacity);
         BackButton.setDisable(false);
